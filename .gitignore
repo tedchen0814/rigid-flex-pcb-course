@@ -1,4 +1,6 @@
 # 原稿、影片逐字稿、供應商資料與 CLAUDE.md 不公開
 /*.md
 !/README.md
+# Vercel 本機連結與環境變數
 .vercel
+.env*
