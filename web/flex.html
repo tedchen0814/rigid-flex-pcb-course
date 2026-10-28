@@ -1,0 +1,91 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>軟性電路板製程 | Flexible PCB Manufacturing</title><link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<header><h1><span class="zh">軟性電路板（Flex PCB）製程</span><span class="en">Flexible PCB (FPC) Manufacturing</span></h1>
+<p><span class="zh">基礎流程 + 工廠實景 + SMT 組裝　</span><span class="en">Basic process + factory tour + SMT assembly　</span><a href="https://youtu.be/qQSfxj-629U" target="_blank">Video 1 ↗</a>　<a href="https://youtu.be/xvByereqOVQ" target="_blank">Video 2 ↗</a>　<a href="animation.html">▶ Animation</a></p></header>
+<main>
+<nav class="tabs" id="tabs"></nav>
+<section class="panel" id="intro"></section>
+<section class="panel" id="basic"><div id="s1"></div></section>
+<section class="panel" id="fact"><div id="s2"></div></section>
+<section class="panel" id="smt"><div id="s3"></div></section>
+<section class="panel" id="quiz"><div id="qz"></div></section>
+<section class="panel" id="gloss"><div class="card" id="gl"></div></section>
+</main><footer>Sources: “How Flexible PCB are Manufactured？” / “Inside a Flexible PCB Factory - in China” (Strange Parts)</footer>
+<script src="assets/app.js"></script>
+<script>
+const tabs=[['intro','① 簡介結構','① Intro & structure'],['basic','② 基礎流程','② Basic process'],['fact','③ 工廠實景','③ Factory tour'],['smt','④ SMT 組裝','④ SMT assembly'],['quiz','⑤ 測驗','⑤ Quiz'],['gloss','⑥ 名詞','⑥ Glossary']];
+document.getElementById('tabs').innerHTML=tabs.map(t=>`<button data-t="${t[0]}">${B(t[1],t[2])}</button>`).join('');
+const ov=[['裁切','Cutting'],['鑽孔','Drilling'],['VCP 電鍍','VCP plating'],['貼乾膜','Dry film'],['曝光','Exposure'],['DES','DES'],['覆蓋膜','Coverlay'],['壓合','Lamination'],['鍍金','Gold plating'],['補強','Stiffeners'],['絲印','Silkscreen'],['飛針測試','Flying probe'],['雷射成型','Laser outline'],['目檢','Inspection']];
+const th=(a,b)=>`<th>${B(a,b)}</th>`;
+document.getElementById('intro').innerHTML=`
+<div class="card"><h3>${B('為什麼需要軟板？','Why flexible boards?')}</h3>
+<p>${B('為滿足電子產品<b>更小、更高密度安裝</b>的需求；可自由<b>彎曲、捲繞、折疊</b>而不損壞，大幅縮減體積與重量。','Developed to meet the need for <b>smaller, higher-density mounting</b>. They can be freely <b>bent, coiled and folded</b> without damage, greatly reducing size and weight.')}</p>
+<p>${[['電腦','Computers'],['醫療','Medical'],['航太','Aerospace'],['汽車電子','Automotive'],['筆電／手機','Laptops / phones']].map(x=>`<span class="tag">${B(x[0],x[1])}</span>`).join('')}</p></div>
+<div class="card"><h3>${B('軟板結構（由內而外）','Flex PCB structure (inside → out)')}</h3><table><tr>${th('層','Layer')}${th('說明','Description')}</tr>
+<tr><td>${B('基材','Core')}</td><td>${B('極薄銅箔 + 黃色聚醯亞胺（PI），雙面皆可有線路','Very thin copper foil on yellow polyimide (PI); circuits on both sides possible')}</td></tr>
+<tr><td>${B('覆蓋膜','Coverlay')}</td><td>${B('極薄 PI，防止不該沾錫處沾錫，焊接處開孔','Thin PI that keeps solder away from unwanted areas; openings where soldering is needed')}</td></tr>
+<tr><td>${B('補強','Stiffener')}</td><td>${B('較厚 PI／FR4／不鏽鋼，防止不該彎折處彎折','Thicker PI / FR4 / stainless steel that stops flexing where it is not wanted')}</td></tr>
+<tr><td>${B('層間黏接層','Bond adhesive')}</td><td>${B('多層軟板的各芯板之間以 adhesive／bondply 黏合（本教學：2L 雙面板 + 1L 單面板 = 3L）','Core layers of a multilayer flex are bonded with adhesive/bondply (here: 2L double-sided + 1L single-sided = 3L)')}</td></tr><tr><td>${B('背膠','Adhesive')}</td><td>${B('用於最終組裝黏貼到產品','For sticking the board into the final product')}</td></tr></table></div>
+<div class="card"><h3>${B('本教學示範的疊構：3L 軟板','Demo stack-up in this course: 3L flex')}</h3><table><tr>${th('組成','Part')}${th('層數','Layers')}</tr><tr><td>${B('雙面板（銅 / PI / 銅）','Double-sided core (Cu / PI / Cu)')}</td><td>2L（L1、L2）</td></tr><tr><td>${B('單面板（PI / 銅）','Single-sided core (PI / Cu)')}</td><td>1L（L3）</td></tr><tr><td>${B('黏接層（adhesive / bondply）','Adhesive (bondply) between the two cores')}</td><td>—</td></tr><tr><td>${B('導通孔','Vias')}</td><td>${B('L1–L2（壓合前雙面板 UV 雷射微盲孔＋填孔）、L2–L3（壓合後 UV 雷射盲孔＋填孔）、L1–L3（機械通孔）','L1–L2 (UV-laser microvia + fill in the core before lamination), L2–L3 (UV-laser blind via + fill after lamination), L1–L3 (mechanical through-hole)')}</td></tr><tr><td><b>${B('合計','Total')}</b></td><td><b>3L</b></td></tr></table><p><small>${B('※ 層數與黏接層為教學示範設定，影片只說明多層板需要加壓步驟。完整動畫見「製程動畫」頁。','※ Layer count and adhesive are demo settings; the video only says multilayer boards need an extra pressing step. See the Process Animation page.')}</small> <a href="animation.html" style="color:var(--acc)">▶ Animation</a></p></div>
+<div class="card"><h3>${B('製程總覽','Process overview')}</h3><div class="chips">${ov.map((x,i)=>`<span class="chip">${i+1}. ${B(x[0],x[1])}</span>`).join('')}</div></div>`;
+
+renderSteps(document.getElementById('s1'),[
+ {t:B('材料與裁切','Materials & cutting'),ts:'0:36',b:ul([['軟板材料為<b>捲筒</b>包裝，依客戶要求裁成需要的尺寸。','Unlike rigid materials, flex material comes in <b>rolls</b> and is cut to the size the customer requires.'],['設備：自動開料機、手動裁切機。','Equipment: automatic cutting machine and manual cutter.']])},
+ {t:B('鑽孔','Drilling'),ts:'0:55',b:ul([['鑽導通孔／定位孔。','Drill through-holes or locating holes in the substrate.'],['表面覆蓋<b>鋁板</b>保護板子免於磨損。','The surface is covered with an <b>aluminum</b> sheet that protects the board from wear.']])},
+ {t:B('VCP 垂直連續電鍍','VCP (vertical continuous plating)'),ts:'1:13',b:ul([['先做「黑孔」形成導電層，再於孔內鍍銅，達成層間導通。','A “black hole” step forms a conductive layer, then the holes are copper-plated to achieve conduction.']])},
+ {t:B('曝光','Exposure'),ts:'1:25',b:ul([['在鍍好的板面壓上<b>感光乾膜</b>。','A photosensitive <b>dry film</b> is pressed onto the plated board surface.']])},
+ {t:B('顯影、蝕刻、去膜（DES）','Develop, etch, strip (DES)'),ts:'1:37',b:ul([['顯影後線路圖形出現在板面，再蝕刻與去膜。','After development the circuit pattern appears; then etching and film stripping follow.'],['以上屬於<b>濕製程區</b>。','These are the <b>wet-zone</b> steps.']])},
+ {t:B('覆蓋膜','Coverlay (overlay film)'),ts:'1:49',b:ul([['又稱絕緣層，相當於硬板的<b>防焊</b>。','Also called the insulating layer; it serves the same purpose as <b>solder mask</b> on rigid boards.'],['保護線路、防短路與氧化；顏色常見黃、黑、白。','Protects the circuit pattern, prevents short circuits and oxidation; typically yellow, black or white.']])},
+ {t:B('壓合','Pressing'),ts:'2:24',b:ul([['多層板需額外加壓，各層以高溫高壓壓合；溫度時間預先在電腦設定。','Multilayer boards need an extra pressing step; layers are bonded under high temperature and pressure, with temperature and time preset on the computer.'],['本教學示範：2L 雙面板 + 1L 單面板，中間放<b>黏接層</b>壓成 <b>3L</b>。','Demo here: a 2L double-sided core + a 1L single-sided core with an <b>adhesive</b> layer between them are pressed into <b>3L</b>.']])},
+ {t:B('絲印與功能測試','Silkscreen & functional test'),ts:'2:56',b:ul([['在指定位置印字／標記，讓元件貼裝更精準，之後全面功能測試。','Characters are printed at set positions so components can be placed more accurately; then the FPC is fully functionally tested.']])},
+ {t:B('雷射外形切割','Laser outline'),ts:'3:11',b:ul([['切縫品質好、不易變形，保證尺寸與品質。','Cut quality is better, deformation less likely, guaranteeing size and quality.']])},
+ {t:B('補強','Reinforcement'),ts:'3:28',b:ul([['軟板太軟，特定位置要補強：PI、電磁屏蔽膜、FR4、鋼片、背膠等。','Flex is too soft, so some places are reinforced: PI, EMI shielding film, FR4, steel backing and other accessories.']])},
+ {t:B('外觀檢查','Appearance inspection'),ts:'3:51',b:ul([['依客戶要求或 <b>IPC</b> 標準檢驗。','Inspected according to customer requirements or <b>IPC</b> standards.']])}
+],'qQSfxj-629U');
+
+renderSteps(document.getElementById('s2'),[
+ {t:B('裁切','Cutting'),b:ul([['從捲料裁成 panel；單面銅 + PI，或雙面銅夾 PI。','Roll material is cut into panels: single-sided copper + PI, or double-sided copper with PI in the middle.']])},
+ {t:B('NC 鑽孔','NC drilling'),b:ul([['多軸並聯；板子被壓在<b>玻纖板</b>下保持平整。','Ganged spindles; panels are held flat under a <b>fiberglass</b> sheet.'],['轉速約 <b>200,000 RPM</b>（桌上 CNC 約 15,000）。','Speeds around <b>200,000 RPM</b> (a desktop CNC maxes out near 15,000).'],['最小鑽針約 <b>0.1 mm</b>（約一根頭髮）。','Smallest bits about <b>0.1 mm</b> (about a human hair).'],['<b>壽命管理：</b>0.2 mm 鑽針 3,000 孔即更換。','<b>Tool-life tracking:</b> a 0.2 mm bit is discarded after 3,000 holes.'],['<b>防呆：</b>感測器檢查鑽針尺寸與斷針，異常停機並亮<b>安燈（Andon）</b>紅燈。','<b>Error-proofing:</b> sensors check bit size and breakage; on a fault the machine stops and lights a red <b>Andon</b> lamp.']])},
+ {t:B('孔金屬化／電鍍','Hole metallization / plating'),b:ul([['孔壁鍍銅使兩面導通。','Copper is plated inside the holes so one side connects to the other.'],['軟板採<b>人工掛架</b>入槽（比自動線更可控、效果更好）。','Flex boards are hung on frames and dipped <b>by hand</b> – more controllable and gives better results than automated lines.']])},
+ {t:B('無塵室：貼乾膜（光阻）','Clean room: dry-film photoresist'),b:ul([['風淋室進入；<b>黃燈</b>，因為光阻遇藍光／UV 會硬化。','Enter via an air shower; <b>yellow lights</b> because the resist hardens under blue/UV light.'],['光阻由捲料熱壓貼合，裁成單片。','Resist is laminated from a roll with heat and pressure, then cut per panel.']])},
+ {t:B('LDI 雷射曝光','LDI laser exposure'),b:ul([['<b>全廠最關鍵製程</b>：把設計轉到銅上。','<b>The most important step in the factory:</b> transferring the design onto the copper.'],['舊法：底片 + 藍光。新法：<b>雷射數位曝光</b>。','Old way: film artwork + blue light. New way: <b>digital laser exposure</b>.'],['相機找對位標記，確保正反面對準。','A camera looks for registration marks to align both sides.'],['<b>真空平台</b>吸平，皺褶會造成圖形誤差。','A <b>vacuum table</b> holds the panel flat – any ripple distorts the pattern.']])},
+ {t:B('DES：顯影 → 蝕刻 → 去膜','DES: develop → etch → strip'),b:ul([['顯影洗掉未曝光光阻 → 酸蝕刻掉多餘銅 → 去膜留下線路。','Developing washes off unexposed resist → acid etches away unwanted copper → stripping removes remaining resist, leaving the circuit.'],['最後<b>軟蝕</b>去除氧化層，洗淨烘乾。','A final <b>soft etch</b> removes the oxide layer, then wash and dry.']])},
+ {t:B('覆蓋膜雷射切割','Coverlay laser cutting'),b:ul([['全自動 UV 雷射，材料為 PI + <b>熱活化膠</b>，依客戶檔案切割，無須人員。','Fully automatic UV laser; PI with <b>heat-activated glue</b>, cut from customer files with no operator needed.'],['方形多孔區是<b>排煙</b>；平台是<b>不鏽鋼真空台</b>，移動時釋放真空再吸附，維持平整。','The perforated square is <b>fume extraction</b>; the stage is a <b>stainless-steel vacuum table</b> – vacuum is released to move, then re-applied to keep the material flat.']])},
+ {t:B('人工貼覆蓋膜','Manual coverlay application'),b:ul([['依角落孔手動對位，用<b>平頭烙鐵</b>點焊固定。','Aligned by hand using corner holes, then tacked with a <b>flat-tip soldering iron</b>.'],['戴橡膠指套：增加抓握、避免指紋。','Rubber finger cots give grip and avoid fingerprints.']])},
+ {t:B('熱壓合','Heat lamination'),b:ul([['壓覆蓋膜與補強，不同材料有不同壓力與溫度。','Presses coverlay and stiffeners; each material has its own pressure and temperature.'],['範例：<b>100 bar、120 秒、180 °C</b>。','Example: <b>100 bar, 120 s, 180 °C</b>.']])},
+ {t:B('化學鎳鈀金','Electroless Ni/Pd/Au plating'),b:ul([['目的：防氧化腐蝕、增進焊錫潤濕。','Purpose: prevent oxidation/corrosion and improve solder wetting.'],['清潔除油 → 微蝕 → 鈀 → 化學鎳 → 金，約 1 小時。','Clean & degrease → micro-etch → palladium → electroless nickel → gold; about 1 hour.'],['使用氰化金鉀溶液，<b>有毒、危險</b>。','Uses potassium gold cyanide solution – <b>toxic and dangerous</b>.']])},
+ {t:B('補強、背膠、EMI','Stiffeners, adhesive, EMI'),b:ul([['補強板放在元件／連接器處，避免焊點斷裂，方便插拔。','Stiffeners go behind components/connectors to protect solder joints and allow connector insertion.'],['材料：PI、不鏽鋼、FR4。背膠如 3M 高溫膠。','Materials: PI, stainless steel, FR4. Adhesive e.g. 3M high-temperature.'],['UV 雷射切割，<b>人工貼合</b>（沒有孔，只能對照板上圖形），烙鐵點焊後壓合。','Cut by UV laser, then <b>applied by hand</b> (no holes to align – only the board artwork), tacked with an iron, then laminated.']])},
+ {t:B('噴墨絲印','Inkjet silkscreen'),b:ul([['改用<b>噴墨 UV 固化環氧墨水</b>，兩道印完。','Now uses an <b>inkjet with UV-curable epoxy ink</b>, printed in two passes.'],['相機辨識 fiducial 對位。','A camera registers on fiducials.'],['印位號、版本號、Logo，供人閱讀。','Prints designators, version numbers and logos for humans to read.']])},
+ {t:B('飛針測試','Flying probe test'),b:ul([['四支機械臂探針測導通，確認無斷線／缺線。','Four robotic arms test continuity to catch broken or missing traces.'],['大焊墊用刀片狀針頭，小焊墊（BGA）用細針。','Blade-like tips for big pads; needle-fine tips for small pads like BGA.'],['<b>100% 全測</b>。','<b>100% of boards are tested.</b>']])},
+ {t:B('外形切割與目檢','Outline cutting & visual inspection'),b:ul([['UV 雷射雙頭切外形。','Dual-head UV laser cuts the outline.'],['硬板自動化較高，<b>軟板仍以人工為關鍵</b>。','Rigid PCBs are more automated; for flex, <b>humans are key</b> to the process.']])}
+]);
+
+renderSteps(document.getElementById('s3'),[
+ {t:B('載板（Carrier tray）','Carrier tray'),b:ul([['軟板太軟，必須放在載板上過產線。','Flex boards are too floppy, so they ride on carrier trays through the line.'],['三根定位銷對位，<b>Kapton（PI）膠帶</b>固定，載板表面為黏性矽膠。','Three pins align the board, <b>Kapton (PI) tape</b> holds it; the tray surface is sticky silicone.']])},
+ {t:B('軟板上板貼片機','Board pick-and-place'),b:ul([['大吸頭、上相機找 fiducial、下相機確認位置。','Large suction head; top camera finds fiducials, bottom camera verifies position.'],['一個載板可放多片小板，提升效率。','Many small boards fit on one tray, increasing efficiency.']])},
+ {t:B('載入機 → 錫膏印刷','Loader → solder paste printing'),b:ul([['錫膏 = 微小錫球 + 助焊膏。鋼板在指定處開孔。','Solder paste = microscopic solder balls in flux paste. A thin steel stencil has openings where solder goes.']])},
+ {t:B('3D SPI','3D SPI'),b:ul([['檢查錫膏厚度與位置。','Checks solder-paste thickness and placement.']])},
+ {t:B('元件貼片','Component placement'),b:ul([['元件在捲帶中；小吸頭；上下相機精準對位。小、大元件分機處理。','Components come on tape reels; small nozzle; top and bottom cameras for precise alignment. Small and large parts run on different machines.']])},
+ {t:B('回焊爐','Reflow oven'),b:ul([['多溫區逐漸升溫使錫熔化，再快速冷卻；需數分鐘。','Several heat zones ramp up until solder melts, then cool quickly; takes a few minutes.']])},
+ {t:B('AOI','AOI'),b:ul([['與良品比對，找立碑、橋接、少錫等。','Compares against a known-good board to find tombstoning, solder bridges, insufficient solder, etc.']])},
+ {t:B('維修、最終檢驗、包裝出貨','Rework, final inspection, packing & shipping'),b:ul([['Rework 修正錯誤 → 與標準圖比對 → 包裝出貨。','Rework fixes errors → compare to reference image → pack and ship.']])}
+]);
+
+const Q=(zh,en,o,a,ez,ee)=>({q:B(zh,en),o:o.map(x=>B(x[0],x[1])),a,e:B(ez,ee)});
+renderQuiz(document.getElementById('qz'),[
+ Q('為何無塵室使用黃色燈光？','Why are the clean-room lights yellow?',[['比較省電','Saves power'],['光阻遇藍光／UV 會硬化','Resist hardens under blue/UV light'],['方便人員工作','Easier on workers'],['減少靜電','Reduces static']],1,'黃光不會使光阻曝光。','Yellow light does not expose the resist.'),
+ Q('鑽孔時板子上方為何蓋玻纖板（或鋁板）？','Why is a fiberglass (or aluminum) sheet placed over the panel when drilling?',[['壓平並保護，確保精度','Hold flat and protect for accuracy'],['增加重量','Add weight'],['裝飾','Decoration'],['導電','Conductivity']],0,'壓平確保精度，鋁板亦保護表面。','Flatness ensures accuracy; aluminum also protects the surface.'),
+ Q('0.2 mm 鑽針壽命為幾孔？','How many holes is a 0.2 mm drill bit rated for?',[['300','300'],['1,000','1,000'],['3,000','3,000'],['30,000','30,000']],2,'達 3,000 孔即丟棄換新。','At 3,000 holes it is discarded and replaced.'),
+ Q('覆蓋膜相當於硬板的什麼？','What is the rigid-board equivalent of coverlay?',[['銅箔','Copper foil'],['防焊層','Solder mask'],['絲印','Silkscreen'],['基材','Substrate']],1,'保護線路、防短路與氧化。','It protects circuits and prevents shorts and oxidation.'),
+ Q('為什麼軟板外形常用雷射切割？','Why is laser cutting common for flex outlines?',[['最便宜','Cheapest'],['不易變形、尺寸精準','Less deformation, accurate size'],['速度最慢','Slowest'],['不需要檔案','No files needed']],1,'切縫品質好。','Cut quality is better.'),
+ Q('本教學的軟板是幾層？如何組成？','How many layers is the demo flex board and how is it built?',[['2L：兩片單面板','2L: two single-sided cores'],['3L：2L 雙面板 + 1L 單面板，以黏接層壓合','3L: 2L double-sided + 1L single-sided, bonded with adhesive'],['4L：兩片雙面板','4L: two double-sided cores'],['1L：單面板','1L: single-sided']],1,'中間的黏接層（adhesive／bondply）把兩種芯板壓合成一體。','An adhesive (bondply) layer bonds the two cores into one board.'),
+ Q('補強板的作用？','What do stiffeners do?',[['增加導電','Increase conductivity'],['防止元件／連接器處彎曲、保護焊點','Prevent flexing at components/connectors, protecting solder joints'],['散熱','Dissipate heat'],['裝飾','Decoration']],1,'也方便連接器插入夾緊。','They also let a connector be pushed in and clamped.'),
+ Q('軟板 SMT 與硬板最大差異？','Biggest SMT difference between flex and rigid?',[['需使用載板支撐','Flex needs a carrier tray'],['不需要錫膏','No solder paste'],['不用回焊','No reflow'],['不用 AOI','No AOI']],0,'三銷定位 + Kapton 膠帶 + 矽膠。','Three alignment pins + Kapton tape + silicone.'),
+ Q('飛針測試的測試比例？','What share of boards get flying-probe tested?',[['抽測 10%','10% sampled'],['抽測 50%','50% sampled'],['100% 全測','100%'],['不測','None']],2,'JLC 強調每片都測。','JLC stresses every board is tested.')
+]);
+renderGlossary(document.getElementById('gl'),[['軟板','FPC / Flexible PCB'],['聚醯亞胺','Polyimide (PI)'],['覆蓋膜','Coverlay'],['補強板','Stiffener'],['黑孔','Black hole'],['垂直連續電鍍','VCP'],['光阻／乾膜','Photoresist / Dry film'],['雷射直接成像','LDI'],['顯影蝕刻去膜','DES'],['安燈','Andon'],['飛針測試','Flying probe test'],['載板','Carrier tray'],['錫膏檢查','SPI'],['自動光學檢查','AOI'],['回焊爐','Reflow oven'],['基準點','Fiducial'],['電磁屏蔽膜','EMI shielding film'],['化學鎳鈀金','ENEPIG'],['黏接層','Adhesive / Bondply'],['雙面板 / 單面板','Double-sided / Single-sided core']]);
+initTabs();
+</script></body></html>
+

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tenting vs Pattern Plating | 蓋孔法與圖形電鍍法</title><link rel="stylesheet" href="assets/style.css">
+<style>
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.side h3{margin:0 0 6px}
+.side svg{background:#0b1220;border:1px solid var(--line);border-radius:12px;width:100%;display:block}
+.side svg *{transition:opacity .8s ease,transform .8s ease}
+.side .cap{margin-top:8px;min-height:7em}
+.side .cap h4{margin:0 0 4px}
+.side.done .cap h4{color:#22c55e}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+.ctrl select{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px}
+.ctrl .btn,.ctrl .spd,.ctrl label{white-space:nowrap}
+.m-both .ctrl .en{display:inline;margin-left:4px}
+#bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin:8px 0}
+#bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .4s}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:middle}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.85rem}
+.chip{cursor:pointer}.chip.cur{background:var(--acc);color:#0f172a;font-weight:700}
+.fault{display:flex;flex-wrap:wrap;gap:8px 18px}
+.fault label{cursor:pointer}
+#zoom{background:#0b1220;border:1px solid var(--line);border-radius:12px;width:100%;display:block}
+@media (max-width:700px){
+ .duo{grid-template-columns:1fr}
+ .side .cap{min-height:0}
+ .m-both .ctrl .btn .en{display:none}
+}
+</style></head>
+<body class="wide">
+<header><h1><span class="zh">Tenting（蓋孔法）vs Pattern Plating（圖形電鍍法）</span><span class="en">Tenting vs Pattern Plating</span></h1>
+<p><span class="zh">兩種外層線路工法並排同步播放，比較工序、線路形狀與常見失敗　</span><span class="en">Two outer-layer imaging methods played side by side: steps, trace profile and typical failures　</span><a href="animation.html">▶ Animation</a></p></header>
+<main>
+<div class="duo">
+ <div class="side" id="sideT"><h3></h3><svg id="svgT" viewBox="0 0 400 250"></svg><div class="cap card"></div></div>
+ <div class="side" id="sideP"><h3></h3><svg id="svgP" viewBox="0 0 400 250"></svg><div class="cap card"></div></div>
+</div>
+<div id="bar"><i></i></div>
+<div class="ctrl" id="ctrl"></div>
+<div class="card"><div class="fault" id="fault"></div></div>
+<div class="card"><h3 id="lgh"></h3><div class="legend" id="lg"></div></div>
+<div class="card"><div class="chips" id="steps"></div></div>
+<div class="card" id="zoomCard"></div>
+<div class="card" id="cmp"></div>
+<div class="card" id="thin"></div>
+<div class="card"><h3 id="qh"></h3><div id="qz"></div></div>
+<div class="card"><span class="zh">※ 教學用簡化示意：層厚與線寬不是真實比例。內容整理自參考筆記《Tenting & Pattern Plating 製程》，並經網路查證修正（銅厚均勻度原本寫反，已更正）與補充。數值多來自板廠技術文章，實際能力以合作板廠為準。本站軟板 3L、1+4+1、2+3 的製程動畫，外層蝕刻都採用 Tenting。</span><span class="en">※ Simplified teaching illustration; thicknesses and widths are not to scale. Based on the reference note “Tenting & Pattern Plating”, corrected (thickness uniformity was reversed) and extended after web checks. Figures mostly come from fabricator articles; confirm with your fab. The 3L, 1+4+1 and 2+3 animations on this site all use tenting for outer-layer etching.</span>
+<p><small>參考來源 Sources：<a href="https://jlcpcb.com/blog/mastering-pcb-plating" target="_blank" rel="noopener">JLCPCB</a> · <a href="https://iconnect007.com/article/98242/plating-process-options-for-flexible-circuits/98245/pcb?page=1" target="_blank" rel="noopener">iConnect007</a> · <a href="https://signalintegrityjournal.com/articles/649-thieving-in-printed-circuit-boards" target="_blank" rel="noopener">Signal Integrity Journal</a> · <a href="https://www.pcbcic.com/wp-content/uploads/2023/07/2-DFM_Guidelines_1.pdf" target="_blank" rel="noopener">DFM Guidelines</a> · <a href="https://www.ondrovo.com/a/20221020-pcb-etching/Chemcut_Bulletin_8_Cupri_Chloride_Proces.pdf" target="_blank" rel="noopener">Chemcut</a> · <a href="https://www.ipc.org/system/files/technical_resource/E17%26S17-2.pdf" target="_blank" rel="noopener">IPC</a> · <a href="https://pcbsync.com/additive-pcb-manufacturing/" target="_blank" rel="noopener">PCBSync</a></small></p></div>
+</main>
+<script src="assets/app.js"></script>
+<script>
+const BG='#0b1220',CU='#ea8a1a',P1='#8b5a2b',P2='#dc2626',FR4='#2f9e5a',SN='#9ca3af',DF='#93c5fd',DH='#2563eb';
+const R=(id,x,y,w,h,f,extra='')=>`<rect id="${id}" x="${x}" y="${y}" width="${w}" height="${h}" fill="${f}" ${extra}/>`;
+const PG=(id,pts,f,extra='')=>`<polygon id="${id}" points="${pts.map(p=>p.join(',')).join(' ')}" fill="${f}" ${extra}/>`;
+const TXT=(id,x,y,t,c,fs=13)=>`<text id="${id}" x="${x}" y="${y}" fill="${c}" font-size="${fs}" font-weight="700" text-anchor="middle">${t}</text>`;
+const on=(ids,o={o:1})=>Object.fromEntries(ids.split(' ').map(k=>[k,o]));
+const rs=(pre,xs,y,h,c,extra='')=>xs.map(([a,b],i)=>R(pre+i,a,y,b-a,h,c,extra));
+const ids=(pre,n)=>Array.from({length:n},(_,i)=>pre+i).join(' ');
+const uv=`<g id="uv" stroke="#a5b4fc" stroke-width="3">`+[100,200,300].map(x=>`<line x1="${x}" y1="46" x2="${x}" y2="84"/><polygon points="${x-6},84 ${x+6},84 ${x},92" fill="#a5b4fc"/>`).join('')+`</g>`;
+// 共用：FR4 基材、上下銅箔、通孔（x180–220）
+const base=[R('fr4',30,120,340,40,FR4),R('fT',30,114,340,6,CU),R('fB',30,160,340,6,CU),`<text x="110" y="145" fill="#d1fae5" font-size="13">FR4</text>`];
+const TR=[[60,110],[260,310]];   // 兩條線路
+const PAD=[[165,180],[220,235]]; // 孔環
+
+// ===== Tenting：全板電鍍加厚 → 乾膜蓋孔 → 酸性蝕刻 =====
+// 側蝕：銅越外側被咬越多（外 7、中 3、內 0）
+function tSeg(pre,x0,x1,top,cutL,cutR){
+  const [yo,ym,yi]=top?[104,114,120]:[176,166,160],a=v=>cutL?v:0,b=v=>cutR?v:0;
+  return [PG(pre+'p',[[x0+a(7),yo],[x1-b(7),yo],[x1-b(3),ym],[x0+a(3),ym]],P1),PG(pre+'f',[[x0+a(3),ym],[x1-b(3),ym],[x1,yi],[x0,yi]],CU)];
+}
+const tSegs=[...tSeg('ts0',60,110,1,1,1),...tSeg('ts1',260,310,1,1,1),...tSeg('ts2',165,180,1,1,0),...tSeg('ts3',220,235,1,0,1),...tSeg('ts4',165,180,0,1,0),...tSeg('ts5',220,235,0,0,1)];
+const TSEG=[0,1,2,3,4,5].map(i=>`ts${i}p ts${i}f`).join(' ');
+const HT=[[60,110],[165,235],[260,310]];
+const tScene=[...base,
+ R('pT',30,104,340,10,P1),R('pB',30,166,340,10,P1),...tSegs,
+ R('hole',180,96,40,88,BG),R('wL',180,104,7,72,P1),R('wR',213,104,7,72,P1),
+ R('eatL',180,128,7,24,BG),R('eatR',213,128,7,24,BG),
+ R('dfT',30,96,340,8,DF,'opacity=".85"'),R('dfB',30,176,340,8,DF,'opacity=".85"'),
+ ...rs('hT',HT,96,8,DH),R('hB0',165,176,70,8,DH),
+ R('crack',192,95,16,10,BG),TXT('crackX',200,92,'✖','#f43f5e',14),
+ uv,TXT('act',200,28,'','#e2e8f0',14),TXT('done',200,214,'✔ 完成 Done（7 步）','#22c55e',15),TXT('fx',200,238,'','#f43f5e',12)
+];
+const tSteps=[
+ {z:['鑽孔','Drilling'],a:'機械鑽孔 Drilling',d:['在雙面板（FR4＋上下銅箔）鑽出通孔。','A through-hole is drilled in a double-sided board (FR4 + copper foil on both sides).'],s:on('fr4 fT fB hole')},
+ {z:['化學銅＋全板電鍍','Electroless Cu + panel plating'],a:'全板電鍍 Panel plating',d:['孔壁先沉積化學銅，再<b>全板電鍍</b>，把孔壁和整片板面一次鍍到最終厚度。所以蝕刻前，面銅就已經是最厚的狀態。','Electroless copper seeds the hole, then <b>panel plating</b> builds the hole wall and the whole surface to final thickness at once, so the copper is at its thickest before etching.'],s:on('pT pB wL wR')},
+ {z:['壓乾膜（負片）','Dry film (negative)'],a:'壓乾膜 Laminate',d:['兩面壓上乾膜。乾膜像<b>帳篷</b>一樣橫跨孔口，Tenting 的名稱就是這樣來的。','Dry film is laminated on both sides and spans the hole like a <b>tent</b> – hence the name.'],s:on('dfT dfB')},
+ {z:['曝光','Exposure'],a:'曝光 Exposure',d:['用負片或 LDI 曝光：<b>要留下的線路、焊墊和孔口上方</b>的乾膜受光硬化。','Negative film or LDI exposure hardens the film over <b>the traces, pads and hole openings that will remain</b>.'],s:on(ids('hT',3)+' hB0'),t:{uv:1}},
+ {z:['顯影','Develop'],a:'顯影 Na₂CO₃',d:['碳酸鈉溶液沖掉沒有曝光的乾膜，露出要蝕刻掉的背景銅；孔口仍然被乾膜蓋住。','Sodium carbonate washes away unexposed film, revealing the background copper to be etched; the hole stays tented.'],s:on('dfT dfB',{o:0}),f:on('crack crackX'),fd:['⚠ 孔徑越大，跨在孔口上的乾膜越容易破裂；可蓋的最大孔徑依乾膜種類與板廠能力而定，設計前要查板廠規格。','⚠ The larger the hole, the more easily the spanning film breaks; the maximum tentable hole depends on the film and the fab – check its capability sheet.'],fx:'⚠ 乾膜破孔 Tent broken'},
+ {z:['酸性蝕刻','Acid etch'],a:'酸性蝕刻 CuCl₂',d:['氯化銅等酸性蝕刻液咬掉裸露的銅。因為整層銅很厚，蝕刻液往下咬的同時也會往兩側咬，線路變成<b>上窄下寬</b>的梯形，也就是<b>側蝕</b>。','An acid etchant (e.g. CuCl₂) removes the exposed copper. The copper is thick, so it is also eaten sideways while being etched down: the trace becomes a <b>trapezoid</b>, narrow on top – <b>undercut</b>.'],s:{...on('fT fB pT pB',{o:0}),...on(TSEG)},f:on('eatL eatR'),fd:['✖ 乾膜破掉的地方，蝕刻液流進孔內，把孔壁銅咬斷，造成斷路。','✖ Etchant enters through the broken tent and severs the hole-wall copper → open circuit.'],fx:'✖ 孔壁被咬斷 → 斷路 Open'},
+ {z:['剝膜（完成）','Strip (done)'],a:'剝膜 NaOH',d:['用強鹼剝除硬化的乾膜，線路完成。總共只要 <b>7 道工序</b>，不需要二銅、鍍錫和剝錫。','Strong alkali strips the hardened film – done. Only <b>7 steps</b>: no second copper, tin plating or tin stripping.'],s:{...on(ids('hT',3)+' hB0',{o:0}),done:{o:1}},f:on('crack crackX',{o:0})}
+];
+
+// ===== Pattern Plating：薄一銅 → 乾膜開溝 → 二銅＋鍍錫 → 鹼性蝕刻 =====
+const PL=[...TR,...PAD];
+const pScene=[...base,
+ R('q1T',30,110,340,4,P1),R('q1B',30,166,340,4,P1),
+ ...rs('sf',PL,114,6,CU),...rs('sq',PL,110,4,P1),...rs('bf',PAD,160,6,CU),...rs('bq',PAD,166,4,P1),
+ R('hole',180,96,40,88,BG),R('w1L',180,110,3,60,P1),R('w1R',217,110,3,60,P1),
+ ...rs('p2',PL,104,6,P2),...rs('p2b',PAD,170,6,P2),R('w2L',183,110,4,60,P2),R('w2R',213,110,4,60,P2),
+ ...rs('sn',PL,101,3,SN),...rs('snb',PAD,176,3,SN),R('snL',187,110,2,60,SN),R('snR',211,110,2,60,SN),
+ R('dfT',30,100,340,10,DF,'opacity=".85"'),R('dfB',30,170,340,10,DF,'opacity=".85"'),
+ ...rs('hT',[[30,60],[110,165],[235,260],[310,370]],100,10,DH),...rs('hB',[[30,165],[235,370]],170,10,DH),
+ // 夾膜：二銅長出乾膜外變成香菇頭，邊緣夾住乾膜
+ ...rs('mu',[[52,118],[252,318]],95,6,P2),...rs('mt',[[52,118],[252,318]],92,3,SN),
+ ...rs('tr',[[52,60],[110,118],[252,260],[310,318]],101,9,DH,'stroke="#f43f5e" stroke-width="1.5"'),
+ ...rs('rc',[[52,60],[110,118],[252,260],[310,318]],110,10,CU,'stroke="#f43f5e" stroke-width="1.5"'),
+ uv,TXT('act',200,28,'','#e2e8f0',14),TXT('done',200,214,'✔ 完成 Done（10 步）','#22c55e',15),TXT('fx',200,238,'','#f43f5e',12)
+];
+const P2IDS=ids('p2',4)+' '+ids('p2b',2)+' w2L w2R',SNIDS=ids('sn',4)+' '+ids('snb',2)+' snL snR',HPI=ids('hT',4)+' '+ids('hB',2);
+const pSteps=[
+ {z:['鑽孔','Drilling'],a:'機械鑽孔 Drilling',d:['與 Tenting 相同，先鑽出通孔。','Same as tenting: drill the through-hole.'],s:on('fr4 fT fB hole')},
+ {z:['化學銅＋一銅（薄）','Electroless Cu + thin 1st copper'],a:'一銅 1st copper',d:['孔壁化學銅之後，只做<b>薄的全板電鍍（一銅）</b>，讓孔壁先導通、撐得過後面的處理。這時面銅還很薄。','After electroless copper, only a <b>thin panel plate (1st copper)</b> is applied so the hole conducts and survives later steps. Surface copper is still thin.'],s:on('q1T q1B w1L w1R')},
+ {z:['壓乾膜（正片）','Dry film (positive)'],a:'壓乾膜 Laminate',d:['兩面壓上乾膜。','Dry film is laminated on both sides.'],s:on('dfT dfB')},
+ {z:['曝光','Exposure'],a:'曝光 Exposure',d:['用正片或 LDI 曝光：<b>背景區</b>（不要銅的地方）的乾膜硬化，線路和孔的位置不曝光。','Positive film or LDI exposure hardens the <b>background</b> (where no copper is wanted); traces and the hole stay unexposed.'],s:on(HPI),t:{uv:1}},
+ {z:['顯影','Develop'],a:'顯影 Na₂CO₃',d:['沖掉線路處的乾膜，形成一條條「溝槽」，線路和孔露出來，等著電鍍。','Film over the traces is washed away, leaving “channels” that expose the traces and hole for plating.'],s:on('dfT dfB',{o:0})},
+ {z:['圖形電鍍（二銅）','Pattern plating (2nd copper)'],a:'二銅 2nd copper',d:['只在溝槽內電鍍<b>二銅</b>，線路和孔壁加厚到規格；背景被乾膜擋住，不會長銅。','<b>Second copper</b> is plated only in the channels, building traces and hole walls to spec; the film-covered background gets none.'],s:on(P2IDS),f:on(ids('mu',2)),fd:['⚠ 二銅鍍得比乾膜還高時，銅會往兩側長成「香菇頭」，把乾膜邊緣夾住，這就是<b>夾膜</b>。','⚠ If the 2nd copper grows above the film it mushrooms sideways and clamps the film edge – <b>film entrapment</b>.'],fx:'⚠ 香菇頭 Mushrooming'},
+ {z:['鍍錫（抗蝕層）','Tin plating (etch resist)'],a:'鍍錫 Tin',d:['在二銅上再鍍一層<b>錫</b>，作為下一步蝕刻的保護層；孔壁也一起鍍上錫。','A layer of <b>tin</b> is plated on the 2nd copper as the etch resist for the next step; the hole wall gets tin too.'],s:on(SNIDS),f:on(ids('mt',2))},
+ {z:['剝膜','Strip film'],a:'剝膜 NaOH',d:['剝除背景的硬化乾膜，露出底下薄薄的一銅和銅箔。','The hardened background film is stripped, exposing the thin 1st copper and foil.'],s:on(HPI,{o:0}),f:on(ids('tr',4)),fd:['✖ 被香菇頭夾住的乾膜剝不掉，留下殘膜。','✖ Film clamped under the mushroom cannot be stripped – residue remains.'],fx:'✖ 夾膜殘留 Trapped film'},
+ {z:['鹼性蝕刻','Alkaline etch'],a:'鹼性蝕刻 NH₃',d:['鹼性（氨水）蝕刻液只要咬掉<b>薄的背景銅</b>，錫保護住線路，所以線路幾乎是直上直下，適合做細線路。','The alkaline (ammonia) etchant only has to remove <b>thin background copper</b> while tin protects the traces, so the walls stay nearly vertical – ideal for fine lines.'],s:{...on('fT fB q1T q1B',{o:0}),...on(ids('sf',4)+' '+ids('sq',4)+' '+ids('bf',2)+' '+ids('bq',2))},f:{...on(ids('tr',4),{o:0}),...on(ids('rc',4))},fd:['✖ 殘膜下面的銅蝕不掉，線路變寬，甚至和旁邊短路。','✖ Copper under the residue is not etched: traces widen or short to neighbours.'],fx:'✖ 蝕刻不淨 → 短路 Short'},
+ {z:['剝錫（完成）','Strip tin (done)'],a:'剝錫 Tin strip',d:['剝掉錫層就完成了。比 Tenting 多了<b>二銅、鍍錫、剝錫</b>，總共 <b>10 道工序</b>，成本較高。','The tin is stripped – done. Compared with tenting it adds <b>2nd copper, tin plating and tin stripping</b> – <b>10 steps</b>, higher cost.'],s:{...on(SNIDS,{o:0}),done:{o:1}},f:on(ids('mt',2),{o:0})}
+];
+
+const SIDES={
+ T:{n:['Tenting 蓋孔法','Tenting'],scene:tScene,steps:tSteps,fault:false,ids:[]},
+ P:{n:['Pattern Plating 圖形電鍍法','Pattern plating'],scene:pScene,steps:pSteps,fault:false,ids:[]}
+};
+const N=Math.max(tSteps.length,pSteps.length);
+let idx=0,playing=false,timer=null,speed=1;
+const $=id=>document.getElementById(id);
+for(const k in SIDES){
+  const S=SIDES[k],svg=$('svg'+k);
+  $('side'+k).querySelector('h3').innerHTML=B(...S.n);
+  // 兩張 SVG 在同一頁，元素 id 加上 T_／P_ 前綴避免重複
+  svg.innerHTML=S.scene.join('').replace(/id="/g,`id="${k}_`);
+  // act／fx 是每步改寫的文字，不參與淡入淡出
+  S.ids=[...svg.querySelectorAll('[id]')].map(e=>e.id.slice(2)).filter(id=>id!=='act'&&id!=='fx');
+}
+function stateAt(k,i){
+  const S=SIDES[k],st={};S.ids.forEach(id=>st[id]={o:0,ty:0});
+  const m=(id,v)=>{if(st[id])Object.assign(st[id],typeof v==='object'?v:{o:v})};
+  const j=Math.min(i,S.steps.length-1);
+  for(let q=0;q<=j;q++){const s=S.steps[q];for(const[id,v]of Object.entries(s.s||{}))m(id,v);if(S.fault)for(const[id,v]of Object.entries(s.f||{}))m(id,v)}
+  if(i===j)for(const[id,v]of Object.entries(S.steps[j].t||{}))m(id,v);
+  return st;
+}
+function draw(){
+  for(const k in SIDES){
+    const S=SIDES[k],st=stateAt(k,idx),j=Math.min(idx,S.steps.length-1),c=S.steps[j],over=idx>=S.steps.length;
+    S.ids.forEach(id=>{const e=$(k+'_'+id),s=st[id];e.style.opacity=s.o;e.style.transform=`translateY(${s.ty}px)`});
+    $(k+'_act').textContent=over?'':c.a;
+    let fx='';if(S.fault)for(let q=0;q<=j;q++)if(S.steps[q].fx)fx=S.steps[q].fx;
+    $(k+'_fx').textContent=fx;
+    const side=$('side'+k);side.classList.toggle('done',over||j===S.steps.length-1&&idx===j);
+    const extra=S.fault&&c.fd?`<p>${B(...c.fd)}</p>`:'';
+    side.querySelector('.cap').innerHTML=over
+      ?`<h4>✔ ${B('已完成','Done')}</h4><p>${B(`Tenting 只要 ${S.steps.length} 步就完成，Pattern Plating 還在做第 ${idx+1} 步。`,`Tenting finished in ${S.steps.length} steps; pattern plating is still on step ${idx+1}.`)}</p>`
+      :`<h4>${j+1}/${S.steps.length}　${B(...c.z)}</h4><p>${B(...c.d)}</p>${extra}`;
+  }
+  document.querySelector('#bar i').style.width=((idx+1)/N*100)+'%';
+  document.querySelectorAll('#steps .chip').forEach((x,k)=>x.classList.toggle('cur',k===idx));
+  $('pp').innerHTML=playing?'⏸ '+B('暫停','Pause'):'▶ '+B('播放','Play');
+}
+$('steps').innerHTML=Array.from({length:N},(_,k)=>{const t=tSteps[k],p=pSteps[k];
+  return `<button class="chip" data-k="${k}">${k+1}. ${B(`T：${t?t.z[0]:'✔'}｜P：${p.z[0]}`,`T: ${t?t.z[1]:'✔'} | P: ${p.z[1]}`)}</button>`}).join('');
+document.querySelectorAll('#steps .chip').forEach(c=>c.onclick=()=>{idx=+c.dataset.k;draw()});
+function tick(){clearTimeout(timer);if(!playing)return;timer=setTimeout(()=>{if(idx<N-1){idx++;draw();tick()}else{playing=false;draw()}},3800/speed)}
+function toggle(){if(!playing&&idx>=N-1)idx=0;playing=!playing;draw();tick()}
+$('ctrl').innerHTML=`<button class="btn" id="pp"></button><button class="btn sec" id="pv">⏮ ${B('上一步','Prev')}</button><button class="btn sec" id="nx">⏭ ${B('下一步','Next')}</button><button class="btn sec" id="rs">↺ ${B('重來','Restart')}</button><label class="spd">${B('速度','Speed')} <select id="sp"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>`;
+$('pp').onclick=toggle;
+$('pv').onclick=()=>{idx=Math.max(0,idx-1);draw()};
+$('nx').onclick=()=>{idx=Math.min(N-1,idx+1);draw()};
+$('rs').onclick=()=>{idx=0;playing=false;clearTimeout(timer);draw()};
+$('sp').onchange=()=>{speed=+$('sp').value;tick()};
+$('fault').innerHTML=`<b>${B('失敗情境','Failure scenarios')}</b><label><input type="checkbox" id="fT"> ${B('Tenting：破孔（Tent broken）','Tenting: broken tent')}</label><label><input type="checkbox" id="fP"> ${B('Pattern Plating：夾膜（Overplating）','Pattern plating: film entrapment')}</label>`;
+$('fT').onchange=e=>{SIDES.T.fault=e.target.checked;draw()};
+$('fP').onchange=e=>{SIDES.P.fault=e.target.checked;draw()};
+$('lgh').innerHTML=B('圖例（剖面圖）','Legend (cross-section)');
+$('lg').innerHTML=[[FR4,'FR4 基材','FR4 substrate'],[CU,'銅箔','Copper foil'],[P1,'全板電鍍／一銅','Panel plating / 1st copper'],[P2,'圖形電鍍（二銅）','Pattern plating (2nd copper)'],[SN,'錫（抗蝕層）','Tin (etch resist)'],[DF,'乾膜（未曝光）','Dry film (unexposed)'],[DH,'乾膜（已硬化）','Dry film (hardened)'],['#a5b4fc','曝光光源','Exposure light'],['#f43f5e','失敗情境標示','Failure marker']].map(x=>`<span><i class="sw" style="background:${x[0]}"></i>${B(x[1],x[2])}</span>`).join('');
+
+// 放大鏡：完成後的單條線路剖面
+const zoomSvg=`<svg id="zoom" viewBox="0 0 640 230" xmlns="http://www.w3.org/2000/svg">
+ <text x="160" y="26" fill="#e2e8f0" font-size="15" font-weight="700" text-anchor="middle">Tenting</text>
+ <text x="480" y="26" fill="#e2e8f0" font-size="15" font-weight="700" text-anchor="middle">Pattern Plating</text>
+ <rect x="20" y="170" width="280" height="40" fill="${FR4}"/><rect x="340" y="170" width="280" height="40" fill="${FR4}"/>
+ <polygon points="120,70 200,70 212,130 108,130" fill="${P1}"/><polygon points="108,130 212,130 220,170 100,170" fill="${CU}"/>
+ <line x1="100" y1="60" x2="120" y2="60" stroke="#f43f5e" stroke-width="2"/><line x1="100" y1="55" x2="100" y2="65" stroke="#f43f5e" stroke-width="2"/><line x1="120" y1="55" x2="120" y2="65" stroke="#f43f5e" stroke-width="2"/>
+ <text x="60" y="58" fill="#fda4af" font-size="12" text-anchor="middle">側蝕</text><text x="60" y="72" fill="#fda4af" font-size="11" text-anchor="middle">undercut</text>
+ <line x1="236" y1="70" x2="236" y2="170" stroke="#94a3b8"/><text x="244" y="116" fill="#cbd5e1" font-size="12">${'整層厚銅'}</text><text x="244" y="132" fill="#94a3b8" font-size="11">thick Cu etched</text>
+ <rect x="430" y="70" width="100" height="70" fill="${P2}"/><rect x="430" y="140" width="100" height="10" fill="${P1}"/><polygon points="430,150 530,150 534,170 426,170" fill="${CU}"/>
+ <line x1="550" y1="140" x2="550" y2="170" stroke="#94a3b8"/><text x="558" y="152" fill="#cbd5e1" font-size="12">只蝕薄銅</text><text x="558" y="168" fill="#94a3b8" font-size="11">thin Cu etched</text>
+ <text x="160" y="226" fill="#94a3b8" font-size="12" text-anchor="middle">上窄下寬 trapezoid</text><text x="480" y="226" fill="#94a3b8" font-size="12" text-anchor="middle">接近直角 near-vertical</text>
+</svg>`;
+$('zoomCard').innerHTML=`<h3>${B('放大鏡：完成後的線路剖面','Magnifier: finished trace profile')}</h3>${zoomSvg}<p>${B('側蝕量大約和「蝕刻時要咬穿的銅厚」成正比。Tenting 蝕刻時要咬穿整層厚銅（銅箔＋全板電鍍），側蝕明顯，傳統經驗值是線寬／線距 ≥ 4 mil（約 100 µm）；搭配減銅、薄銅箔與 LDI，可再往下做到約 25–30 µm。Pattern Plating 只要咬掉薄的背景銅，側蝕很小，線寬也由乾膜開口決定、比較好預測。兩種工法都要在底片上預先把線加寬（<b>線寬補償</b>），補回蝕刻損失，Tenting 要補得比較多。','Undercut grows roughly with the copper thickness that must be etched through. Tenting etches the full thick copper (foil + panel plating), so undercut is significant; the classic rule is line/space ≥ 4 mil (≈100 µm), and with copper reduction, thin foil and LDI it can reach about 25–30 µm. Pattern plating only removes thin background copper, so undercut is small and the width is set by the resist opening. Both need <b>etch compensation</b> (lines drawn wider on the artwork); tenting needs more.')}</p>`;
+
+const rows=[[['底片','Artwork'],['負片（線路處透光硬化）','Negative (traces exposed)'],['正片（背景處透光硬化）','Positive (background exposed)']],
+ [['電鍍方式','Plating'],['全板電鍍，一次鍍到規格','Panel plating to full thickness'],['一銅（薄）＋線路選擇性二銅','Thin 1st copper + selective 2nd copper on traces']],
+ [['抗蝕層','Etch resist'],['乾膜','Dry film'],['電鍍錫','Plated tin']],
+ [['蝕刻液','Etchant'],['酸性（如氯化銅）','Acid (e.g. CuCl₂)'],['鹼性（氨水系）。酸性氯化銅會咬錫，所以不能用；鹼性槽的 pH 和氯離子也要控制，否則一樣會攻擊錫','Alkaline (ammoniacal). Acid cupric chloride attacks tin, so it cannot be used; alkaline bath pH and chloride must also be controlled or the tin is attacked']],
+ [['工序','Steps'],['少（本頁 7 步）','Fewer (7 here)'],['多（本頁 10 步：多二銅、鍍錫、剝錫）','More (10 here: + 2nd Cu, tin, tin strip)']],
+ [['線寬／線距','Line / space'],['傳統經驗值 ≥ 4 mil；搭配減銅、薄銅箔與 LDI 可到約 25–30 µm','Classic rule ≥ 4 mil; ≈25–30 µm with copper reduction, thin foil and LDI'],['可做 &lt; 4 mil；更細時用延伸工法 mSAP（約 15–30 µm）或 SAP（&lt; 15 µm），用於手機 HDI 與 IC 載板','Below 4 mil; finer still with mSAP (≈15–30 µm) or SAP (&lt; 15 µm), used in phone HDI and IC substrates']],
+ [['線寬補償','Etch compensation'],['要補得比較多（咬穿的銅厚）','Larger (thick copper etched)'],['補得比較少（只咬薄底銅）','Smaller (only thin base copper etched)']],
+ [['孔環','Annular ring'],['乾膜要蓋過孔邊（常見約 0.125 mm）才封得住，蝕刻後孔周圍一定留一圈銅，限制佈線密度','The film must overlap the hole edge (typically ≈0.125 mm) to seal, so a copper ring always remains, limiting routing density'],['孔壁由錫保護，不靠乾膜封孔','Hole walls are protected by tin, not by a film tent']],
+ [['成本／週期','Cost / cycle time'],['低／短','Low / short'],['高／長','High / long']],
+ [['銅厚均勻度','Thickness uniformity'],['較好（整片板子一起鍍，電流分布較平均）','Better (whole panel plated, more even current)'],['隨線路疏密變化：孤立細線電流密度高、鍍得較厚；常加假銅（thieving）平衡','Varies with pattern density: isolated fine traces see higher current and plate thicker; thieving is added to balance']],
+ [['阻抗控制','Impedance control'],['線路銅厚較一致，但側蝕讓線寬誤差較大','More uniform trace copper, but undercut widens width tolerance'],['線寬較準，但銅厚隨疏密變化','More accurate width, but copper thickness varies with density']],
+ [['主要風險','Main risk'],['破孔：孔越大乾膜越容易破，孔壁被咬斷；上限依乾膜與板廠能力而定','Broken tent: larger holes tear the film more easily and lose hole copper; the limit depends on film and fab'],['夾膜：二銅高過乾膜，殘膜導致蝕刻不淨或短路','Film entrapment: overplating traps film, leaving copper / shorts']],
+ [['優點總結','In short'],['流程精簡、便宜、銅厚均勻、沒有二銅夾膜問題','Simple, cheap, even copper, no overplating issues'],['細線路、側蝕小、線寬準','Fine lines, little undercut, accurate width']]];
+$('cmp').innerHTML=`<h3>${B('優缺點比較','Pros and cons')}</h3><table><tr><th>${B('項目','Item')}</th><th>Tenting</th><th>Pattern Plating</th></tr>`+rows.map(r=>`<tr><td>${B(...r[0])}</td><td>${B(...r[1])}</td><td>${B(...r[2])}</td></tr>`).join('')+`</table>`;
+$('thin').innerHTML=`<h3>${B('減銅放在哪裡？','Where does copper reduction fit?')}</h3>`+ul([
+ ['<b>Tenting</b>：在壓乾膜之前，用水平線（硫酸／雙氧水）把面銅均勻削薄（例如 12–18 µm → 5–8 µm），直接減少要咬穿的銅厚，側蝕跟著變小。本站各製程動畫的「減銅」步驟就是這個用途。','<b>Tenting</b>: before laminating film, a horizontal line (sulfuric acid / peroxide) evenly thins the surface copper (e.g. 12–18 µm → 5–8 µm), reducing the copper to etch and therefore the undercut. This is the “copper reduction” step in this site’s animations.'],
+ ['<b>Pattern Plating</b>：在貼乾膜前先減銅，最後鹼性蝕刻時背景銅極薄，可以用很短的時間「閃蝕」乾淨，線路邊緣不容易受損。','<b>Pattern plating</b>: thinning before the film makes the background copper so thin that the final alkaline etch becomes a quick “flash etch”, protecting trace edges.']]);
+const Q=(zh,en,o,a,ez,ee)=>({q:B(zh,en),o:o.map(x=>B(x[0],x[1])),a,e:B(ez,ee)});
+$('qh').innerHTML=B('小測驗','Quiz');
+renderQuiz($('qz'),[
+ Q('Tenting 的抗蝕層是什麼？','What is the etch resist in tenting?',[['乾膜','Dry film'],['電鍍錫','Plated tin'],['防焊漆','Solder mask'],['覆蓋膜','Coverlay']],0,'硬化的乾膜蓋住線路與孔口；Pattern Plating 才用錫。','Hardened dry film covers traces and holes; pattern plating uses tin.'),
+ Q('為什麼 Tenting 的線路容易「上窄下寬」？','Why do tenting traces become trapezoids?',[['蝕刻時要咬穿整層厚銅，側蝕較大','The full thick copper is etched, causing more undercut'],['乾膜太厚','The film is too thick'],['鹼性蝕刻液太強','The alkaline etchant is too strong'],['錫層太薄','The tin is too thin']],0,'側蝕和要咬穿的銅厚成正比；減銅可以改善。','Undercut grows with copper thickness; copper reduction helps.'),
+ Q('哪一種情況最容易發生 Tenting 破孔？','When is a broken tent most likely?',[['孔徑太大','Hole too large'],['線寬小於 4 mil','Line width below 4 mil'],['銅箔太薄','Foil too thin'],['使用 LDI 曝光','Using LDI exposure']],0,'孔太大時，跨在孔口上的乾膜強度不夠，容易破裂。','Over a large hole the spanning film is too weak and tears.'),
+ Q('要做 3 mil 的細線路，比較適合哪一種？','Which suits 3 mil fine lines better?',[['Pattern Plating','Pattern plating'],['Tenting','Tenting'],['兩者一樣','Either'],['都做不到','Neither']],0,'Pattern Plating 蝕刻時只咬薄銅，側蝕小，適合 &lt; 4 mil。','Pattern plating etches only thin copper, so undercut is small – suited to &lt; 4 mil.')
+]);
+initLang();draw();
+</script></body></html>

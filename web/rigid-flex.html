@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>軟硬結合板如何製造 | How Rigid-Flex PCBs Are Made</title><link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<header><h1><span class="zh">軟硬結合板（Rigid-Flex PCB）如何製造</span><span class="en">How Rigid-Flex PCBs Are Manufactured</span></h1>
+<p><span class="zh">軟板製程 + 硬板製程 + 壓合｜約 3 分 48 秒　</span><span class="en">Flex process + rigid process + lamination | ~3 min 48 s　</span><a href="https://youtu.be/earOp9YcDpc" target="_blank">YouTube ↗</a>　<a href="animation.html">▶ Animation</a></p></header>
+<main>
+<nav class="tabs" id="tabs"></nav>
+
+<section class="panel" id="review"><div class="card"><h3 id="rvh"></h3><div class="chips" id="rv"></div></div></section>
+<section class="panel" id="flow"><div id="steps"></div></section>
+<section class="panel" id="key"></section>
+<section class="panel" id="game"><div class="card"><h3 id="gh"></h3><div id="ord"></div></div></section>
+<section class="panel" id="quiz"><div id="qz"></div></section>
+<section class="panel" id="gloss"><div class="card" id="gl"></div></section>
+</main><footer>Source: “How does rigid-flex pcbs are manufactured？”</footer>
+<script src="assets/app.js"></script>
+<script>
+const tabs=[['review','① 軟板複習','① Flex recap'],['flow','② 結合製程','② Rigid-flex process'],['key','③ 重點','③ Key points'],['game','④ 排序遊戲','④ Order game'],['quiz','⑤ 測驗','⑤ Quiz'],['gloss','⑥ 名詞','⑥ Glossary']];
+document.getElementById('tabs').innerHTML=tabs.map(t=>`<button data-t="${t[0]}">${B(t[1],t[2])}</button>`).join('');
+document.getElementById('rvh').innerHTML=B('2 分鐘複習：軟板 13 步','2-minute recap: 13 steps of flex PCB manufacturing')+' <small><a href="flex.html" style="color:var(--acc)">→ Flex page</a></small>';
+document.getElementById('gh').innerHTML=B('製程排序小遊戲','Process ordering game');
+const rv=[['材料','Materials'],['裁切','Cutting'],['鑽孔','Drilling'],['VCP 鍍銅','VCP copper plating'],['曝光顯影','Exposure & development'],['蝕刻','Etching'],['覆蓋膜','Coverlay'],['壓合','Lamination'],['絲印','Silkscreen'],['電測','Electrical test'],['雷射外形','Laser routing'],['補強','Reinforcement'],['外觀檢查','Visual inspection']];
+document.getElementById('rv').innerHTML=rv.map((x,i)=>`<span class="chip">${i+1}. ${B(x[0],x[1])}</span>`).join('');
+
+document.getElementById('key').innerHTML=`
+<div class="card"><h3>${B('必記重點','Must-remember points')}</h3><ul class="key">
+<li>${B('軟硬結合 = 軟板製程 + 硬板製程 + <b>壓合</b>','Rigid-flex = flex process + rigid process + <b>lamination</b>')}</li>
+<li>${B('層疊結構要<b>對稱</b> → 避免彎曲、開裂','Keep the stack-up <b>symmetrical</b> → avoids warping and cracking')}</li>
+<li>${B('軟硬交界處要<b>點軟膠</b> → 緩衝，保護軟板不被硬板尖角割傷','Apply <b>flexible dispensing</b> at the rigid/flex junction → cushions and protects the flex from sharp rigid corners')}</li>
+<li>${B('<b>開蓋</b>是軟硬結合板獨有的銑切製程','<b>Opening the cover</b> is a routing step unique to rigid-flex')}</li>
+<li>${B('出貨前：可靠度測試 + 自動檢查 + 人工目檢 + 真空包裝','Before shipping: reliability test + automated inspection + manual inspection + vacuum packing')}</li></ul></div>
+<div class="card"><h3>${B('本教學示範的疊構：1+4+1','Demo stack-up in this course: 1+4+1')}</h3><table><tr><th>${B('位置','Position')}</th><th>${B('內容','Content')}</th></tr><tr><td>${B('上硬板','Top rigid')}</td><td>${B('1 層 FR4（外側 1 層銅，L1）','1 FR4 layer (one outer copper, L1)')}</td></tr><tr><td>${B('接合','Bonding')}</td><td>${B('prepreg（半固化片），軟板區挖空（no-flow）','Prepreg, cut away over the flex area (no-flow)')}</td></tr><tr><td>${B('軟板核心','Flex core')}</td><td>${B('<b>4 層</b>（L2–L5）＝ 兩片 2L 雙面板，中間以黏接層壓合','<b>4 layers</b> (L2–L5) = two 2L double-sided cores bonded with adhesive')}</td></tr><tr><td>${B('接合','Bonding')}</td><td>${B('prepreg','Prepreg')}</td></tr><tr><td>${B('下硬板','Bottom rigid')}</td><td>${B('1 層 FR4（外側 1 層銅，L6）','1 FR4 layer (one outer copper, L6)')}</td></tr><tr><td>${B('導通孔','Vias')}</td><td>${B('L1–L2、L6–L5（HDI 增層雷射盲孔）、L2–L3、L5–L4（雙面板雷射微孔，壓合後成埋孔），全部填孔電鍍；L2–L5（軟板機械通孔）、L1–L6（PTH 機械通孔）','L1–L2, L6–L5 (HDI build-up laser blind vias), L2–L3, L5–L4 (core laser microvias, buried after lamination), all copper-filled; L2–L5 (flex mechanical through-hole), L1–L6 (mechanical PTH)')}</td></tr><tr><td><b>${B('合計','Total')}</b></td><td><b>1+4+1 = ${B('6 層銅','6 copper layers')}</b></td></tr></table><p><small>${B('※ 層數與 prepreg 為教學示範設定，影片只說明「層疊要對稱」與「所有材料依序疊放壓合」。','※ Layer count and prepreg are demo settings; the video only says the stack must be symmetrical and all materials are stacked and pressed in order.')}</small></p></div>
+<div class="card"><h3>${B('製程對照','Process comparison')}</h3><table><tr><th>${B('與硬板相同','Same as rigid PCB')}</th><th>${B('軟硬結合特有','Unique to rigid-flex')}</th></tr>
+<tr><td>${B('蝕刻、AOI、防焊、絲印','Etching, AOI, solder mask, silkscreen')}</td><td>${B('壓合軟/硬材料、軟膠點膠、開蓋（雷射切除軟板區上方硬板）','Laminating flex/rigid materials, flexible dispensing, cover opening (laser-cutting the rigid layer above the flex area)')}</td></tr></table></div>`;
+
+renderSteps(document.getElementById('steps'),[
+ {t:B('壓合：軟硬板結合','Lamination: joining rigid and flex'),ts:'1:39–2:17',b:ul([['所有要壓合的材料依序疊放，送入壓機完成壓合。','All materials to be laminated are stacked in order and pressed.'],['本教學示範：4 層軟板上下各放 <b>prepreg</b> + 1 層硬板（<b>1+4+1</b>），壓合時 prepreg 固化黏合。','Demo here: a <b>prepreg</b> sheet and one rigid layer on each side of the 4-layer flex (<b>1+4+1</b>); the prepreg cures to bond everything during pressing.']])+tip('<b>設計重點 1：</b>層疊結構要對稱，避免板子彎曲、開裂。','<b>Design tip 1:</b> Keep the layer stack symmetrical to avoid bending and cracking.')+tip('<b>設計重點 2：</b>軟硬交界處必須做軟膠點膠，形成緩衝，保護軟板不被硬板尖角損傷。','<b>Design tip 2:</b> Flexible dispensing is required at the rigid/flex intersection – it cushions and protects the flex board from the rigid board’s sharp corners.')},
+ {t:B('自動打靶','Automatic targeting'),ts:'2:17–2:33',b:ul([['自動打靶機協助打出<b>定位孔</b>。','An automatic targeting machine drills the <b>positioning holes</b>.']])},
+ {t:B('PTH 鍍通孔','PTH (plated through hole)'),ts:'2:25–2:39',b:ul([['讓通孔能正常導通。','Lets the through-holes conduct properly.'],['此步之後數個步驟與硬板製程相同。','The next several steps are the same as rigid-board manufacturing.']])},
+ {t:B('蝕刻 → AOI → 防焊 → 絲印','Etching → AOI → Solder mask → Silkscreen'),ts:'2:39–2:51',b:ul([['與硬板製程相同。','Same as the rigid-board process.']])},
+ {t:B('開蓋（Open cover plate）','Opening the cover (open cover plate)'),ts:'2:51–3:14',b:ul([['銑切與硬板不同。','This routing step differs from rigid boards.'],['在軟板所在區域，以<b>雷射</b>切除不需要硬板的部分，讓軟板露出。','In the area where the flex board sits, the unneeded rigid portion is <b>laser-cut</b> so the flex is exposed.'],['影片中看到的淡黃色部分之後會被剝除。','The pale-yellow parts seen in the video are peeled off afterwards.']])},
+ {t:B('可靠度測試','Reliability testing'),ts:'3:14–3:25',b:ul([['確保功能完整，無<b>分層、起泡、爆板</b>等問題。','Ensure full functionality with no <b>delamination, blistering or bursting</b>.']])},
+ {t:B('外觀檢查與包裝','Inspection & packaging'),ts:'3:25–3:48',b:ul([['自動外觀檢查機之後，再做<b>人工目檢</b>。','After the automatic appearance inspection, do a <b>manual visual inspection</b>.'],['<b>真空包裝</b>避免破損。','<b>Vacuum packaging</b> prevents breakage.']])}
+],'earOp9YcDpc');
+renderOrder(document.getElementById('ord'),[['軟板（4L）製作','Make the 4L flex core'],['疊 prepreg + 硬板並壓合','Stack prepreg + rigid & laminate'],['自動打靶','Automatic targeting'],['PTH','PTH'],['蝕刻','Etching'],['AOI','AOI'],['防焊','Solder mask'],['絲印','Silkscreen'],['開蓋','Open the cover'],['可靠度測試','Reliability test'],['外觀檢查','Appearance inspection'],['真空包裝','Vacuum packing']]);
+const Q=(zh,en,o,a,ez,ee)=>({q:B(zh,en),o:o.map(x=>B(x[0],x[1])),a,e:B(ez,ee)});
+renderQuiz(document.getElementById('qz'),[
+ Q('為什麼層疊設計要對稱？','Why should the stack-up be symmetrical?',[['降低成本','Lower cost'],['避免板子彎曲、開裂','Avoid bending and cracking'],['方便包裝','Easier packaging'],['提高導電性','Better conductivity']],1,'不對稱會造成應力，導致翹曲或開裂。','Asymmetry causes stress, leading to warping or cracking.'),
+ Q('「1+4+1」代表什麼？','What does “1+4+1” mean?',[['上硬板 1 層 + 4 層軟板 + 下硬板 1 層','1 rigid layer + 4-layer flex + 1 rigid layer'],['共 6 片硬板','6 rigid boards in total'],['1 層軟板 + 4 層硬板 + 1 層軟板','1 flex + 4 rigid + 1 flex'],['每層 1.4 mm','1.4 mm per layer']],0,'共 6 層銅；硬軟之間以 prepreg 黏合。','6 copper layers in total; rigid and flex are joined by prepreg.'),
+ Q('prepreg 的作用是什麼？','What does prepreg do?',[['印文字','Print legends'],['壓合時固化，把硬板與軟板黏接成一體','Cures during lamination, bonding rigid and flex together'],['鑽孔保護','Drill backup'],['防止氧化','Prevent oxidation']],1,'prepreg = 半固化片；軟板區通常挖空避免黏住。','Prepreg is a semi-cured bonding sheet; it is usually cut away over the flex area.'),
+ Q('軟硬交界處為何要點軟膠？','Why apply flexible dispensing at the junction?',[['美觀','Looks'],['增加導電','More conductivity'],['緩衝並保護軟板不被硬板尖角損傷','Cushion and protect the flex from sharp rigid corners'],['加速壓合','Faster lamination']],2,'軟膠形成緩衝。','The soft compound acts as a cushion.'),
+ Q('「開蓋」的目的是？','What is “opening the cover” for?',[['在硬板上鑽孔','Drilling holes in the rigid board'],['以雷射切除軟板區上方的硬板，使軟板露出','Laser-cutting the rigid layer above the flex area to expose it'],['為板子上色','Coloring the board'],['測試導通','Testing continuity']],1,'開蓋是軟硬結合板特有的銑切。','It is a routing step unique to rigid-flex.'),
+ Q('壓合後為何要做 PTH？','Why is PTH done after lamination?',[['讓通孔正常導通','So through-holes conduct properly'],['增加厚度','Add thickness'],['印文字','Print text'],['包裝','Packaging']],0,'PTH = 鍍通孔。','PTH = plated through hole.'),
+ Q('下列何者不是可靠度測試要排除的缺陷？','Which is NOT a defect that reliability testing looks for?',[['分層','Delamination'],['起泡','Blistering'],['爆板','Bursting'],['顏色偏黃','Yellowish color']],3,'分層、起泡、爆板才是。','Delamination, blistering and bursting are.')
+]);
+renderGlossary(document.getElementById('gl'),[['軟硬結合板','Rigid-flex PCB'],['覆蓋膜','Coverlay'],['壓合','Lamination / Pressing'],['軟膠點膠','Flexible dispensing'],['鍍通孔','PTH (Plated Through Hole)'],['開蓋','Open cover plate'],['分層','Delamination'],['起泡','Blistering'],['爆板','Bursting'],['半固化片','Prepreg'],['黏接層','Adhesive / Bondply'],['1+4+1','Rigid 1 + Flex 4 + Rigid 1 stack-up']]);
+initTabs();
+</script></body></html>

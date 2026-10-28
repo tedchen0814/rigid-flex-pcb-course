@@ -1,0 +1,294 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>製程動畫 | Process Animation</title><link rel="stylesheet" href="assets/style.css">
+<style>
+#stage{background:#0b1220;border:1px solid var(--line);border-radius:12px;width:100%;display:block}
+#stage *{transition:opacity .9s ease,transform .9s ease}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+.ctrl select{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px}
+.mode button.on{background:var(--acc);color:#0f172a}
+#bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin:8px 0}
+#bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .4s}
+.cap h3{margin:0 0 4px}.sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:middle}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.85rem}
+.chip.cur{background:var(--acc);color:#0f172a;font-weight:700}
+.chip{cursor:pointer}
+#layers{border-left:4px solid var(--acc);font-weight:600;padding:10px 16px}
+#layers summary{cursor:pointer}#layers summary::marker{color:var(--acc)}#layers p{margin:6px 0 0;font-weight:400}
+.ctrl .btn,.ctrl .spd{white-space:nowrap}
+.m-both .ctrl .en{display:inline;margin-left:4px}
+@media (max-width:600px){
+ #stage text{font-size:17px}
+ #stage text[font-size="14"],#stage g text{font-size:22px}
+ .m-both .ctrl .btn .en{display:none}
+}
+</style></head>
+<body class="wide">
+<header><h1><span class="zh">製程動畫（剖面圖）</span><span class="en">Process Animation (cross-section)</span></h1>
+<p><span class="zh">播放軟板（3L）、軟硬結合板（1+4+1）與 2+3 非對稱軟硬結合板每一步的疊構變化</span><span class="en">Watch the stack change at every step of flex (3L), rigid-flex (1+4+1) and 2+3 asymmetric rigid-flex manufacturing</span></p></header>
+<main>
+<div class="ctrl mode" id="mode"></div>
+<div class="card" id="layers"></div>
+<svg id="stage" viewBox="0 0 800 340" xmlns="http://www.w3.org/2000/svg"></svg>
+<div id="bar"><i></i></div>
+<div class="ctrl" id="ctrl"></div>
+<div class="card"><h3 id="lgh"></h3><div class="legend" id="lg"></div></div>
+<div class="card cap" id="cap"></div>
+<div class="card"><div class="chips" id="steps"></div></div>
+<div class="card" id="stack"></div>
+<div class="card"><span class="zh">※ 這是教學用的簡化示意：層厚與位置不是真實比例；層數（3L、1+4+1）、黏接層與 prepreg 為示範設定，並非影片原文；2+3 非對稱同樣是示範疊構。外層蝕刻都採用 Tenting，和 Pattern Plating 的比較見 <a href="plating.html">第 4 站</a>。</span><span class="en">※ A simplified teaching illustration: thicknesses/positions are not to scale; the layer counts (3L, 1+4+1), adhesive and prepreg are demo settings, not taken from the videos; the 2+3 asymmetric stack is also a demo stack-up. Outer layers use tenting; see <a href="plating.html">Stop 4</a> for the comparison with pattern plating.</span></div>
+</main>
+<script src="assets/app.js"></script>
+<script>
+const BG='#0b1220',CU='#ea8a1a',PI='#f5c542',ADH='#f9a8d4',PRE='#a78bfa',COV='#a16207',FR4='#2f9e5a';
+const R=(id,x,y,w,h,f,extra='')=>`<rect id="${id}" x="${x}" y="${y}" width="${w}" height="${h}" fill="${f}" ${extra}/>`;
+const TX=(id,x,y,t,c='#fdba74')=>`<text id="${id}" x="${x}" y="${y}" fill="${c}" font-size="12" font-weight="700">${t}</text>`;
+const uvTop=(y0,y1)=>`<g id="uv" stroke="#a5b4fc" stroke-width="3">`+[200,400,600].map(x=>`<line x1="${x}" y1="${y0}" x2="${x}" y2="${y1-8}"/><polygon points="${x-6},${y1-8} ${x+6},${y1-8} ${x},${y1}" fill="#a5b4fc"/>`).join('')+`<text x="400" y="${y0-6}" fill="#c7d2fe" font-size="14" text-anchor="middle" stroke="none">LDI 雷射直接成像</text></g>`;
+const uvBot=(y0,y1)=>`<g id="uvB" stroke="#a5b4fc" stroke-width="3">`+[200,400,600].map(x=>`<line x1="${x}" y1="${y0}" x2="${x}" y2="${y1+8}"/><polygon points="${x-6},${y1+8} ${x+6},${y1+8} ${x},${y1}" fill="#a5b4fc"/>`).join('')+`<text x="400" y="${y0+14}" fill="#c7d2fe" font-size="14" text-anchor="middle" stroke="none">LDI 雷射直接成像</text></g>`;
+const drill=(id,x,y)=>`<g transform="translate(${x},${y})"><g id="${id}"><polygon points="-9,-70 9,-70 9,-12 0,0 -9,-12" fill="#cbd5e1"/></g></g>`;
+const pressLbl=y=>`<text id="pressLbl" x="400" y="${y}" fill="#fca5a5" font-size="14" text-anchor="middle">▼ 180 °C · 100 bar ▼</text>`;
+const probe=`<g id="probe" stroke="#e2e8f0" stroke-width="2"><line x1="130" y1="110" x2="130" y2="148"/><line x1="470" y1="110" x2="470" y2="156"/><circle cx="130" cy="148" r="3" fill="#e2e8f0"/><circle cx="470" cy="156" r="3" fill="#e2e8f0"/><path d="M130 110 Q300 70 470 110" fill="none" stroke="#22c55e"/></g>`;
+// 雷射鑽微孔：從 y0 打到 y1（停在銅墊上）
+const lasV=(id,x,y0,y1)=>`<line id="${id}" x1="${x}" y1="${y0}" x2="${x}" y2="${y1}" stroke="#f43f5e" stroke-width="3"/>`;
+const las=(id,x,y0)=>`<line id="${id}" x1="${x}" y1="${y0}" x2="${x}" y2="290" stroke="#f43f5e" stroke-width="3"/>`;
+const ok=`<text id="okTxt" x="400" y="328" fill="#22c55e" font-size="18" text-anchor="middle">✔ PASS</text>`;
+
+// ===== 軟板 3L：2L 雙面板 + 1L 單面板 =====
+const flexScene=[
+ R('scrapL',30,184,70,28,'#475569'),R('scrapR',700,184,70,28,'#475569'),
+ R('pia',100,168,600,16,PI),R('c1',100,160,600,8,CU),R('c2',100,184,600,8,CU),
+ R('adh',100,192,600,6,ADH),
+ R('pib',100,198,600,14,PI),R('c3',100,212,600,8,CU),
+ R('g1a',250,160,40,8,BG),R('g1b',500,160,40,8,BG),R('g2a',230,184,40,8,BG),R('g2b',520,184,40,8,BG),R('g3a',270,212,40,8,BG),R('g3b',520,212,40,8,BG),
+ R('hole',380,140,40,100,BG),R('wallL',380,160,5,60,CU),R('wallR',415,160,5,60,CU),
+ R('h12',162,160,12,24,BG),R('f12',162,160,12,24,CU),
+ R('h23',620,192,12,28,BG),R('f23',620,192,12,28,CU),
+ R('pl1',100,155,280,5,CU),R('pl1b',420,155,280,5,CU),R('pl3',100,220,280,5,CU),R('pl3b',420,220,280,5,CU),
+ R('covT1',100,150,330,10,COV),R('covT2',530,150,170,10,COV),R('covB',100,220,600,10,COV),
+ R('gold',440,156,60,4,'#facc15'),R('stiff',560,230,140,22,'#78350f'),
+ R('silk1',120,146,30,4,'#fff'),R('silk2',170,146,20,4,'#fff'),
+ R('fT',100,152,600,8,'#3b82f6','opacity=".85"'),R('f2',100,192,600,8,'#3b82f6','opacity=".85"'),R('f3',100,220,600,8,'#3b82f6','opacity=".85"'),
+ TX('fl1',4,168,'L1'),TX('fl2',4,192,'L2'),TX('fl3',4,220,'L3'),
+ R('plT',90,110,620,12,'#94a3b8'),R('plB',90,290,620,12,'#94a3b8'),pressLbl(102),
+ uvTop(92,146),uvBot(322,284),drill('drill1',400,140),probe,
+ las('lasL',100,90),las('lasR',700,90),
+ lasV('lasC',168,80,184),lasV('lasV',626,300,192),ok
+];
+const flexDEF={pib:{ty:45},c3:{ty:45},g3a:{ty:45},g3b:{ty:45},fl3:{ty:45},covT1:{ty:-40},covT2:{ty:-40},covB:{ty:40},stiff:{ty:40},plT:{ty:-30},plB:{ty:30},probe:{ty:-30},drill1:{ty:-70},uv:{ty:-10},uvB:{ty:10},pressLbl:{ty:-10}};
+const on=(ids,o={o:1})=>Object.fromEntries(ids.split(' ').map(k=>[k,o]));
+const flexSteps=[
+ {z:['裁切（2L 雙面料 + 1L 單面料）','Cutting (2L double-sided + 1L single-sided)'],d:['裁出兩種材料：<b>雙面板</b>（銅/PI/銅，L1+L2）與<b>單面板</b>（PI/銅，L3）。','Two materials are cut: a <b>double-sided</b> core (Cu/PI/Cu = L1+L2) and a <b>single-sided</b> core (PI/Cu = L3).'],s:on('pia c1 c2 pib c3 scrapL scrapR fl1 fl2 fl3')},
+ {z:['雙面板雷射鑽孔（L1–L2）','Core laser drilling (L1–L2)'],d:['壓合前在<b>雙面板</b>上用 <b>UV 雷射</b>從 L1 面打穿銅與 PI，停在 L2 銅墊上，形成 L1–L2 微盲孔。只連相鄰兩層的小孔用雷射，孔徑可小到約 50–100 µm，比機械鑽針更小、更不傷薄 PI。','Before lamination a <b>UV laser</b> drills from the L1 side of the <b>double-sided core</b> through copper and PI, stopping on the L2 pad – an L1–L2 microvia. Holes joining only two adjacent layers are laser-drilled: ~50–100 µm, smaller than any drill bit and gentler on thin PI.'],s:on('h12'),t:{lasC:1}},
+ {z:['雙面板填孔電鍍（L1–L2）','Core via-fill plating (L1–L2)'],d:['電漿除膠渣 → 黑孔直接金屬化 → <b>填孔電鍍</b>，把微孔整個用銅填滿，L1 與 L2 導通；填平的孔上面還能再疊孔或放焊墊；填孔後面銅變厚，會先減銅再做 L2 線路。','Plasma desmear → direct metallization → <b>via-fill plating</b> fills the microvia solid with copper, joining L1 and L2; a filled via can carry a stacked via or a pad on top.'],s:on('f12')},
+ {z:['內層 L2 成像蝕刻','Inner layer (L2): imaging + etch'],d:['只有 L2 會被壓在裡面，所以先做 L2 線路：貼乾膜、<b>LDI 雷射直接成像</b>（不用底片）、顯影、蝕刻。外層 L1 整面以乾膜保護、單面板的 L3 也先保留整片銅，等鑽孔電鍍後再做。','Only L2 ends up inside, so it is patterned first: dry film, <b>LDI laser direct imaging</b> (no film artwork), develop, etch. Outer L1 stays fully covered by film and L3 on the single-sided core stays solid copper until after drilling and plating.'],s:on('g2a g2b'),t:{fT:1,f2:1,uvB:{o:1,ty:0}}},
+ {z:['黏接層疊合壓合 → 3L','Adhesive bonding → 3L'],d:['在 L2 與單面板之間放<b>黏接層（adhesive / bondply）</b>，高溫高壓壓成 <b>3 層</b>軟板。','An <b>adhesive (bondply)</b> sheet goes between L2 and the single-sided core; heat and pressure bond them into a <b>3-layer</b> flex.'],s:{adh:{o:1},pib:{ty:0},c3:{ty:0},g3a:{ty:0},g3b:{ty:0},fl3:{ty:0}},t:{plT:{o:1,ty:38},plB:{o:1,ty:-70},pressLbl:{o:1,ty:0}}},
+ {z:['通孔鑽孔（L1–L3）','Through-hole drilling (L1–L3)'],d:['貫穿全部 3 層、還要插件或定位的通孔，仍用高速 NC 機械鑽孔（最高約 200,000 RPM）；只連相鄰兩層的小孔才交給雷射。','Through-holes that cross all 3 layers (and serve pins or tooling) still use a high-speed NC drill (up to ~200,000 RPM); only small holes joining two adjacent layers go to the laser.'],s:on('hole'),t:{drill1:{o:1,ty:95}}},
+ {z:['雷射盲孔（L2–L3）','Laser blind via (L2–L3)'],d:['L2 已經壓在裡面，只能從 L3 這面用 <b>UV 雷射</b>打穿 L3 銅、PI 與黏接層，停在 L2 銅墊上，形成<b>盲孔</b>。','L2 is now buried, so a <b>UV laser</b> drills from the L3 side through the L3 copper, PI and adhesive, stopping on the L2 copper pad – a <b>blind via</b>.'],s:on('h23'),t:{lasV:1}},
+ {z:['電漿除膠＋VCP 電鍍','Plasma desmear + VCP plating'],d:['<b>電漿</b>清掉孔內 PI 與膠渣 → 黑孔直接金屬化 → VCP 電鍍：通孔孔壁鍍銅，雷射盲孔同時<b>填孔</b>，讓 L1／L2／L3 導通。','<b>Plasma</b> cleans PI and adhesive smear from the holes → direct metallization → VCP: through-hole walls are plated while the laser vias are <b>filled</b>, linking L1/L2/L3.'],s:on('wallL wallR f23 pl1 pl1b pl3 pl3b')},
+ {z:['減銅（L1／L3）','Copper reduction (L1/L3)'],d:['全板電鍍加上填孔，面銅變得很厚，直接蝕刻側蝕會很大。先用水平線（硫酸／雙氧水）均勻微蝕，把面銅削薄（例如 12–18 µm → 5–8 µm），後面才能蝕出細線路。','Panel plating plus via fill leaves thick surface copper, which would undercut badly when etched. A horizontal line (sulfuric acid / peroxide) evenly micro-etches it thinner (e.g. 12–18 µm → 5–8 µm) so fine lines can be etched next.'],s:on('pl1 pl1b pl3 pl3b',{o:0})},
+ {z:['外層 L1／L3 成像蝕刻（Tenting）','Outer layers (L1/L3): imaging + etch (tenting)'],d:['<b>Tenting 蓋孔法</b>：兩面貼乾膜、LDI 雷射直接成像，硬化的乾膜像帳篷一樣蓋住孔口與線路，再顯影、酸性蝕刻、去膜。若先蝕刻外層，電鍍銅會疊在已完成的線路上。','<b>Tenting</b>: dry film on both sides, LDI exposure; the hardened film covers hole openings and traces like a tent, then develop, acid etch, strip. Etching first would let plating build up on finished traces.'],s:on('g1a g1b g3a g3b'),t:{fT:1,f3:1,uv:{o:1,ty:0},uvB:{o:1,ty:0}}},
+ {z:['貼覆蓋膜','Coverlay'],d:['覆蓋膜（相當於軟板防焊）保護 L1、L3 外層線路，焊接處留開口。','Coverlay (the flex solder mask) protects the outer layers L1 and L3; openings are left for soldering.'],s:on('covT1 covT2 covB',{o:1,ty:0})},
+ {z:['熱壓合','Heat lamination'],d:['高溫高壓把覆蓋膜牢牢壓合（例：180 °C、100 bar、120 秒）。','Heat and pressure bond the coverlay (e.g. 180 °C, 100 bar, 120 s).'],t:{plT:{o:1,ty:28},plB:{o:1,ty:-60},pressLbl:{o:1,ty:0}}},
+ {z:['焊墊鍍金','Gold plating'],d:['鎳鈀金防氧化並提升焊錫潤濕性。','Ni/Pd/Au prevents oxidation and improves solder wetting.'],s:on('gold')},
+ {z:['貼補強板','Stiffener'],d:['在元件／連接器處貼補強板（PI、FR4 或不鏽鋼），再壓合。','Stiffeners (PI, FR4 or steel) go under components/connectors, then are laminated.'],s:{stiff:{o:1,ty:0}}},
+ {z:['噴墨絲印','Inkjet silkscreen'],d:['印上位號、版本號與 Logo。','Designators, version numbers and logos are printed.'],s:on('silk1 silk2')},
+ {z:['飛針測試','Flying-probe test'],d:['探針逐點量測 3 層線路導通，100% 全測。','Probes check continuity across the 3 layers net by net – 100% tested.'],t:{probe:{o:1,ty:0},okTxt:1}},
+ {z:['雷射外形切割','Laser outline'],d:['UV 雷射切出最終外形，邊料脫離。','A UV laser cuts the final outline; scrap falls away.'],s:{scrapL:{o:0,ty:30},scrapR:{o:0,ty:30}},t:{lasL:1,lasR:1}},
+ {z:['外觀檢查','Final inspection'],d:['依客戶要求或 IPC 標準檢查，完成！（3L 軟板）','Inspected to customer/IPC criteria – done! (3L flex)'],s:on('okTxt')}
+];
+
+// ===== 軟硬結合板 1+4+1：上硬板 1 + 4 層軟板 + 下硬板 1（共 6 層銅）=====
+const rigidScene=[
+ R('scrapL',30,160,70,56,'#475569'),R('scrapR',700,160,70,56,'#475569'),
+ R('c1',100,156,600,7,CU),R('pia',100,163,600,12,PI),R('c2',100,175,600,7,CU),
+ R('adh',100,182,600,8,ADH),
+ R('c3',100,190,600,7,CU),R('pib',100,197,600,12,PI),R('c4',100,209,600,7,CU),
+ R('g1a',250,156,40,7,BG),R('g1b',500,156,40,7,BG),R('g2a',230,175,40,7,BG),R('g2b',520,175,40,7,BG),
+ R('g3a',270,190,40,7,BG),R('g3b',480,190,40,7,BG),R('g4a',290,209,40,7,BG),R('g4b',540,209,40,7,BG),
+ R('hole',380,150,40,72,BG),R('wallL',380,156,5,60,CU),R('wallR',415,156,5,60,CU),
+ R('h23',201,156,12,19,BG),R('f23',201,156,12,19,CU),
+ R('h45',601,197,12,19,BG),R('f45',601,197,12,19,CU),
+ R('covT',300,148,260,8,COV),R('covB',300,216,260,8,COV),
+ R('pT1',100,142,200,14,PRE),R('pT1c',300,142,30,6,PRE),R('pT2',560,142,140,14,PRE),R('pT2c',530,142,30,6,PRE),
+ R('pB1',100,216,200,14,PRE),R('pB1c',300,224,30,6,PRE),R('pB2',560,216,140,14,PRE),R('pB2c',530,224,30,6,PRE),
+ R('rTL',100,112,230,30,FR4),R('rTM',330,112,200,30,FR4),R('rTR',530,112,170,30,FR4),
+ R('rBL',100,230,230,30,FR4),R('rBM',330,230,200,30,FR4),R('rBR',530,230,170,30,FR4),
+ R('foT',100,108,600,4,CU),R('foB',100,260,600,4,CU),
+ R('plO1',100,104,600,4,CU),R('plO6',100,264,600,4,CU),
+ R('ocT1',100,108,50,4,CU),R('ocT2',180,108,150,4,CU),R('ocT3',530,108,170,4,CU),
+ R('ocB1',100,260,50,4,CU),R('ocB2',180,260,150,4,CU),R('ocB3',530,260,170,4,CU),
+ R('mT',100,104,230,8,'#16a34a','opacity=".8"'),R('mTR',530,104,170,8,'#16a34a','opacity=".8"'),R('mB',100,260,230,8,'#16a34a','opacity=".8"'),R('mBR',530,260,170,8,'#16a34a','opacity=".8"'),
+ R('sk1',200,100,30,4,'#fff'),R('sk2',250,100,20,4,'#fff'),R('sk3',600,100,40,4,'#fff'),
+ R('mv1',112,108,12,48,BG),R('mv1f',112,108,12,48,CU),R('mv6',664,216,12,48,BG),R('mv6f',664,216,12,48,CU),
+ R('hole2',150,104,30,164,BG),R('w2L',150,108,4,156,CU),R('w2R',176,108,4,156,CU),
+ `<circle id="d1" cx="330" cy="152" r="5" fill="#a3e635"/>`,`<circle id="d2" cx="530" cy="152" r="5" fill="#a3e635"/>`,
+ `<circle id="d3" cx="330" cy="220" r="5" fill="#a3e635"/>`,`<circle id="d4" cx="530" cy="220" r="5" fill="#a3e635"/>`,
+ R('fA1',100,148,600,8,'#3b82f6','opacity=".85"'),R('fA2',100,182,600,8,'#3b82f6','opacity=".85"'),
+ R('fB1',100,182,600,8,'#3b82f6','opacity=".85"'),R('fB2',100,216,600,8,'#3b82f6','opacity=".85"'),
+ TX('rl1',4,112,'L1'),TX('rl2',4,163,'L2'),TX('rl3',4,182,'L3'),TX('rl4',4,197,'L4'),TX('rl5',4,216,'L5'),TX('rl6',4,264,'L6'),
+ R('plT',90,80,620,12,'#94a3b8'),R('plB',90,290,620,12,'#94a3b8'),pressLbl(72),
+ uvTop(66,146),uvBot(322,284),drill('drill1',400,150),drill('drill2',165,104),
+ lasV('lasC1',207,60,175),lasV('lasC2',607,320,247),lasV('lasT',118,60,156),lasV('lasB',670,310,216),
+ R('scan',100,96,4,190,'#22d3ee'),
+ las('lasM1',330,100),las('lasM2',530,100),
+ `<rect id="bag" x="15" y="64" width="770" height="238" rx="22" fill="rgba(255,255,255,.07)" stroke="#cbd5e1" stroke-dasharray="6 4"/>`,ok
+];
+const RIG='rTL rTM rTR rBL rBM rBR',PRE_='pT1 pT1c pT2 pT2c pB1 pB1c pB2 pB2c';
+const rigidDEF={pib:{ty:50},c3:{ty:50},c4:{ty:50},g3a:{ty:50},g3b:{ty:50},g4a:{ty:50},g4b:{ty:50},rl4:{ty:50},rl5:{ty:50},h45:{ty:50},f45:{ty:50},
+ pT1c:{ty:-50},pT2c:{ty:-50},pB1c:{ty:50},pB2c:{ty:50},
+ covT:{ty:-40},covB:{ty:40},foT:{ty:-50},foB:{ty:50},rl1:{ty:-50},rl6:{ty:50},rTL:{ty:-50},rTM:{ty:-50},rTR:{ty:-50},rBL:{ty:50},rBM:{ty:50},rBR:{ty:50},
+ pT1:{ty:-50},pT2:{ty:-50},pB1:{ty:50},pB2:{ty:50},plT:{ty:-30},plB:{ty:30},drill1:{ty:-70},drill2:{ty:-70},uv:{ty:-10},uvB:{ty:10},pressLbl:{ty:-10}};
+const rigidSteps=[
+ {z:['裁切（兩片 2L 雙面料）','Cutting (two 2L double-sided cores)'],d:['軟板先用兩片<b>雙面料</b>（銅/PI/銅）：上為 L2+L3，下為 L4+L5。','The flex part starts from two <b>double-sided</b> cores (Cu/PI/Cu): upper = L2+L3, lower = L4+L5.'],s:on('c1 pia c2 c3 pib c4 scrapL scrapR rl2 rl3 rl4 rl5')},
+ {z:['雙面板雷射鑽孔（L2–L3／L5–L4）','Core laser drilling (L2–L3 / L5–L4)'],d:['壓合前兩片<b>雙面板</b>各自用 <b>UV 雷射</b>打微盲孔：上片從 L2 打到 L3，下片從 L5 打到 L4，都停在對面的銅墊上。之後整片壓合，這些孔就成為板內的<b>埋孔</b>。','Before lamination a <b>UV laser</b> drills microvias in each <b>double-sided core</b>: L2→L3 in the upper core, L5→L4 in the lower core, each stopping on the opposite pad. After full lamination they become <b>buried vias</b>.'],s:on('h23 h45'),t:{lasC1:1,lasC2:1}},
+ {z:['雙面板填孔電鍍（L2–L3／L5–L4）','Core via-fill plating (L2–L3 / L5–L4)'],d:['電漿除膠渣 → 直接金屬化 → <b>填孔電鍍</b>把微孔填滿銅；填平後上面還能疊孔，壓合時也不會留下空洞；之後同樣先減銅再做內層線路。','Plasma desmear → direct metallization → <b>via-fill plating</b> fills the microvias with copper; filled vias can be stacked on and leave no voids during lamination.'],s:on('f23 f45')},
+ {z:['內層 L3／L4 成像蝕刻','Inner layers (L3/L4): imaging + etch'],d:['兩片雙面板先做會被壓在中間的 L3、L4：貼乾膜、LDI 雷射直接成像、顯影、蝕刻、去膜。外側 L2、L5 整面以乾膜保護，等軟板鑽孔電鍍後再做。','Both cores first pattern the layers that end up inside, L3 and L4: film, LDI exposure, develop, etch, strip. Outer L2 and L5 stay fully covered by film until the flex is drilled and plated.'],s:on('g2a g2b g3a g3b'),t:{fA1:1,fA2:1,fB1:{o:1,ty:50},fB2:{o:1,ty:50},uv:{o:1,ty:0},uvB:{o:1,ty:0}}},
+ {z:['黏接層壓合 → 4L 軟板','Adhesive bonding → 4L flex'],d:['兩片雙面板中間放<b>黏接層（adhesive / bondply）</b>壓合成 <b>4 層</b>軟板。','A <b>bondply/adhesive</b> sheet between the two cores bonds them into a <b>4-layer</b> flex.'],s:{adh:{o:1},pib:{ty:0},c3:{ty:0},c4:{ty:0},g3a:{ty:0},g3b:{ty:0},g4a:{ty:0},g4b:{ty:0},rl4:{ty:0},rl5:{ty:0},h45:{ty:0},f45:{ty:0}},t:{plT:{o:1,ty:64},plB:{o:1,ty:-74},pressLbl:{o:1,ty:0}}},
+ {z:['軟板通孔鑽孔＋鍍銅（L2–L5）','Flex through-hole drill + plate (L2–L5)'],d:['貫穿 4 層軟板鑽通孔並鍍銅，讓 L2–L5 導通。','Through-holes are drilled across the 4-layer flex and plated, linking L2–L5.'],s:on('hole wallL wallR'),t:{drill1:{o:1,ty:80}}},
+ {z:['軟板外側 L2／L5 成像蝕刻','Flex outer layers (L2/L5): imaging + etch'],d:['電鍍完成後才做 L2、L5 線路；若先蝕刻，電鍍銅會疊在已完成的線路上。','L2 and L5 are patterned only after plating; etching first would let plating build up on finished traces.'],s:on('g1a g1b g4a g4b'),t:{fA1:1,fB2:1,uv:{o:1,ty:0},uvB:{o:1,ty:0}}},
+ {z:['貼局部覆蓋膜','Selective (bikini) coverlay'],d:['覆蓋膜只貼在<b>軟板區</b>，兩側稍微伸進硬板區（約 0.5–1 mm）。硬板區不留覆蓋膜和膠，可以避免受熱時 Z 軸膨脹拉裂孔壁，雷射盲孔也只需要打穿 prepreg。','Coverlay is applied only over the <b>flex area</b>, reaching slightly (≈0.5–1 mm) into the rigid zone. Keeping coverlay and its adhesive out of the rigid area avoids Z-axis expansion that cracks hole walls, and lets laser vias go through prepreg only.'],s:on('covT covB',{o:1,ty:0})},
+ {z:['疊層：prepreg + 硬板 → 1+4+1','Stack-up: prepreg + rigid → 1+4+1'],d:['軟板上下各放 <b>prepreg（半固化片）</b>與一層硬板 FR4（外側各一整片銅箔，之後成為 L1、L6）＝ <b>1+4+1</b>；結構要<b>對稱</b>。prepreg 在軟板區挖空（no-flow）。','<b>Prepreg</b> plus one FR4 rigid layer goes on each side of the flex (each with a solid outer copper foil that becomes L1/L6) = <b>1+4+1</b>; keep it <b>symmetrical</b>. Prepreg is cut away over the flex area (no-flow).'],s:on(RIG+' '+PRE_+' foT foB rl1 rl6')},
+ {z:['壓合','Lamination'],d:['高溫高壓使 prepreg 固化，把硬板與軟板黏成一體；no-flow prepreg 流動很少，不會溢進軟板區。','Heat and pressure cure the prepreg, bonding rigid and flex into one board; no-flow prepreg barely flows, so it stays out of the flex area.'],s:{...on(RIG+' '+PRE_+' foT foB rl1 rl6',{o:1,ty:0})},t:{plT:{o:1,ty:20},plB:{o:1,ty:-30},pressLbl:{o:1,ty:0}}},
+ {z:['HDI 雷射盲孔（L1–L2／L6–L5）','HDI laser blind vias (L1–L2 / L6–L5)'],d:['「1+4+1」在 HDI 的意思就是兩面各一層<b>增層</b>：以雷射從 L1 打到 L2、從 L6 打到 L5，取代貫穿全板的機械孔，省下內層走線空間。','In HDI terms, “1+4+1” means one <b>build-up layer</b> per side: a laser drills L1→L2 and L6→L5, replacing full through-holes and freeing routing space on the inner layers.'],s:on('mv1 mv6'),t:{lasT:1,lasB:1}},
+ {z:['自動打靶＋機械鑽通孔','Targeting + mechanical through-drilling'],d:['自動打靶機（X-ray 對位）打出定位孔，再用 NC 機械鑽出貫穿 6 層的通孔（插件、定位用）。','An automatic X-ray targeting machine makes locating holes, then an NC drill makes through-holes across all 6 layers (for pins and tooling).'],s:on('hole2'),t:{drill2:{o:1,ty:160}}},
+ {z:['電漿除膠＋填孔電鍍／PTH','Plasma desmear + via fill / PTH'],d:['電漿清孔 → 直接金屬化 → 電鍍：雷射盲孔<b>填滿銅</b>，通孔孔壁鍍銅，L1–L6 全部導通。','Plasma clean → direct metallization → plating: laser vias are <b>filled</b> with copper and through-hole walls plated, connecting L1–L6.'],s:on('w2L w2R mv1f mv6f plO1 plO6')},
+ {z:['減銅（L1／L6）','Copper reduction (L1/L6)'],d:['全板電鍍加上填孔，外層面銅變得很厚。先用水平線（硫酸／雙氧水）均勻微蝕削薄（例如 12–18 µm → 5–8 µm），減少後面蝕刻的側蝕，才能做出細線路。','Panel plating plus via fill leaves thick outer copper. A horizontal line (sulfuric acid / peroxide) evenly micro-etches it thinner (e.g. 12–18 µm → 5–8 µm), cutting undercut so fine lines can be etched.'],s:on('plO1 plO6',{o:0})},
+ {z:['外層蝕刻 L1／L6（Tenting）','Outer-layer etching (L1/L6) – tenting'],d:['與硬板相同，用 <b>Tenting 蓋孔法</b>：貼乾膜、LDI 成像，乾膜蓋住孔口與線路，再顯影、酸性蝕刻、去膜；軟板區上方的銅也一併蝕除。','Same as rigid boards, using <b>tenting</b>: dry film, LDI imaging, film tents over holes and traces, then develop, acid etch, strip; copper over the flex area is etched away too.'],s:{...on('ocT1 ocT2 ocT3 ocB1 ocB2 ocB3'),...on('foT foB',{o:0})}},
+ {z:['AOI＋防焊＋絲印','AOI + solder mask + silkscreen'],d:['自動光學檢查後印防焊與絲印。','After AOI, solder mask and silkscreen are applied.'],s:on('mT mB mTR mBR sk1 sk2 sk3'),t:{scan:{o:1,tx:600}}},
+ {z:['開蓋','Cover opening'],d:['雷射切除軟板區上方的硬板，讓軟板露出（軟硬結合板獨有）。','A laser removes the rigid layers over the flex area, exposing the flex (unique to rigid-flex).'],s:{rTM:{o:0,ty:-70},rBM:{o:0,ty:70}},t:{lasM1:1,lasM2:1}},
+ {z:['軟硬交界點軟膠','Flexible dispensing'],d:['開蓋後交界處才露出來，這時點軟膠緩衝，保護軟板不被硬板尖角割傷。','The junction is only reachable after cover opening; soft compound is dispensed there to cushion the flex from sharp rigid corners.'],s:on('d1 d2 d3 d4')},
+ {z:['可靠度測試＋真空包裝','Reliability test + vacuum pack'],d:['檢查分層、起泡、爆板；自動＋人工目檢後真空包裝。','Check for delamination, blistering, bursting; auto + manual inspection, then vacuum-pack.'],s:on('okTxt bag')}
+];
+// ===== 軟硬結合板 2+3 非對稱：3L 軟板（L3–L5）上方循序增層 2 層（L2、L1）=====
+// 左側 x100–420 為硬板區，右側 x420–700 為軟板區（上方硬板最後開蓋移除）
+const P1='#8b5a2b',P2='#dc2626',EMI='#334155',SUS='#cbd5e1';
+// 蝕刻後的線路分段：每段 = 銅 + 第二次電鍍層
+const seg=(pre,xs,y,h,c)=>xs.map(([a,b],i)=>R(pre+i,a,y,b-a,h,c));
+const ids=(pre,n)=>Array.from({length:n},(_,i)=>pre+i).join(' ');
+const L1X=[[100,170],[186,236],[286,340],[360,420]],L5X=[[100,160],[190,260],[286,340],[370,470],[500,600],[620,700]];
+const MKX=[[100,186],[236,286],[340,420]],AUX=[[186,200],[222,236],[286,300],[326,340]];
+const OC='oc1_ o1r_ oc5_ o5r_'.split(' ').map((p,k)=>ids(p,k<2?L1X.length:L5X.length)).join(' ');
+const asymScene=[
+ R('scrapL',30,170,70,32,'#475569'),R('scrapR',700,170,70,32,'#475569'),
+ R('fr4L',100,94,320,52,FR4),R('fr4R',420,94,280,52,FR4),R('c1',100,88,600,6,CU),
+ R('pp1L',100,152,320,10,PRE),R('c2',100,146,600,6,CU),
+ R('cvT',100,162,600,8,COV),
+ R('c3',100,174,600,4,CU),R('pi34',100,178,600,16,PI),R('c4',100,194,600,4,CU),
+ R('adh5',100,202,600,8,ADH),R('pi5',100,210,600,8,PI),R('c5',100,218,600,6,CU),
+ R('pl3',100,170,600,4,P1),R('pl4',100,198,600,4,P1),
+ R('q1x',100,84,600,2,P2),R('q1',100,86,600,2,P2),R('q5',100,224,600,2,P2),R('q5x',100,226,600,2,P2),
+ ...seg('oc1_',L1X,88,6,CU),...seg('o1r_',L1X,86,2,P2),...seg('oc5_',L5X,218,6,CU),...seg('o5r_',L5X,224,2,P2),
+ R('g2a',250,146,25,6,BG),R('g2f',420,146,280,6,BG),
+ R('g3a',220,170,30,8,BG),R('g3b',500,170,30,8,BG),R('g4a',240,194,30,8,BG),R('g4b',560,194,30,8,BG),
+ R('h34',134,174,12,20,BG),R('f34',134,170,12,24,P1),
+ R('h45',134,202,12,22,BG),R('f45',134,202,12,26,P2),
+ R('holeB',200,84,22,62,BG),R('wB1',200,86,4,60,P2),R('wB2',218,86,4,60,P2),
+ R('holeT',300,80,26,152,BG),R('wT1',300,86,4,142,P2),R('wT2',322,86,4,142,P2),
+ R('cvB',100,228,600,10,COV),
+ ...seg('mk',MKX,80,8,'#16a34a').map(s=>s.replace('/>',' opacity=".8"/>')),...seg('au',AUX,82,4,'#facc15'),
+ R('emT',400,158,300,4,EMI,'stroke="#94a3b8"'),R('emB',100,238,600,4,EMI,'stroke="#94a3b8"'),
+ R('tape',560,242,140,6,'#64748b'),R('sus',560,248,140,14,SUS),
+ R('fT3',100,166,600,4,'#3b82f6','opacity=".85"'),R('fB4',100,202,600,4,'#3b82f6','opacity=".85"'),
+ R('fT2',100,142,600,4,'#3b82f6','opacity=".85"'),R('fT1',100,82,600,4,'#3b82f6','opacity=".85"'),R('fB5',100,226,600,4,'#3b82f6','opacity=".85"'),
+ TX('rl1',4,94,'L1'),TX('rl2',4,152,'L2'),TX('rl3',4,178,'L3'),TX('rl4',4,200,'L4'),TX('rl5',4,224,'L5'),
+ `<text id="frT" x="260" y="124" fill="#d1fae5" font-size="12" text-anchor="middle">FR4 710 µm（prepreg ②）</text>`,
+ `<text id="zR" x="260" y="306" fill="#94a3b8" font-size="12" text-anchor="middle">◀ 硬板區 Rigid ▶</text>`,`<text id="zF" x="560" y="306" fill="#94a3b8" font-size="12" text-anchor="middle">◀ 軟板區 Flex ▶</text>`,
+ R('plT',90,60,620,12,'#94a3b8'),R('plB',90,272,620,12,'#94a3b8'),pressLbl(54),
+ uvTop(20,80),uvBot(322,284),drill('drillT',313,80),drill('drillB',211,84),
+ lasV('lasA',140,30,174),lasV('lasB',140,320,202),lasV('lasM',420,30,162),ok
+];
+const asymDEF={c1:{ty:-50},fr4L:{ty:-50},fr4R:{ty:-50},frT:{ty:-50},rl1:{ty:-50},c2:{ty:-50},pp1L:{ty:-50},rl2:{ty:-50},cvT:{ty:-30},
+ adh5:{ty:50},pi5:{ty:50},c5:{ty:50},rl5:{ty:50},cvB:{ty:40},tape:{ty:40},sus:{ty:40},plT:{ty:-30},plB:{ty:30},drillT:{ty:-70},drillB:{ty:-70},pressLbl:{ty:-10}};
+const press=(top,bot)=>({plT:{o:1,ty:top-72},plB:{o:1,ty:bot-272},pressLbl:{o:1,ty:0}});
+const asymSteps=[
+ {z:['裁切（L3/L4 雙面料）','Cutting (L3/L4 double-sided core)'],d:['從<b>雙面軟板料</b>開始（Cu 9 µm／PI 25 µm／Cu 9 µm），上面是 L3、下面是 L4。這塊是整片板子的核心，之後的層都往它的上下兩側加。','It starts from a <b>double-sided flex core</b> (Cu 9 µm / PI 25 µm / Cu 9 µm): L3 on top, L4 below. This is the core; every other layer is added onto it.'],s:on('c3 pi34 c4 scrapL scrapR rl3 rl4')},
+ {z:['雷射鑽孔（L3–L4）','Laser drilling (L3–L4)'],d:['<b>UV 雷射</b>從 L3 打穿銅與 PI，停在 L4 銅墊上。之後這個孔會在最下面，成為 L3→L5 疊孔的第一段。','A <b>UV laser</b> drills through the L3 copper and PI, stopping on the L4 pad. This becomes the lower half of the L3→L5 stacked via.'],s:on('h34'),t:{lasA:1}},
+ {z:['第一次電鍍（填孔＋面銅 13 µm）','1st plating (via fill + 13 µm surface)'],d:['電漿除膠 → 直接金屬化 → <b>第一次電鍍</b>：L3–L4 微孔填滿銅，L3、L4 面銅各加約 13 µm（疊構表的 PTH Copper 13）。填平的孔上面之後才能再疊孔。','Plasma desmear → direct metallization → <b>1st plating</b>: the L3–L4 microvia is filled and ~13 µm is added to L3 and L4 (PTH Copper 13 in the stack-up). A filled via can carry another via on top.'],s:on('pl3 pl4 f34')},
+ {z:['L3／L4 成像蝕刻（Tenting）','L3/L4 imaging + etch (tenting)'],d:['兩面貼乾膜、LDI 雷射直接成像，乾膜蓋住孔與線路，再顯影、酸性蝕刻、去膜。L3、L4 之後都會被壓在裡面，所以現在就要把線路做好。','Dry film on both sides, LDI exposure; film tents over the via and traces, then develop, acid etch, strip. L3 and L4 will both end up inside, so they are patterned now.'],s:on('g3a g3b g4a g4b'),t:{fT3:1,fB4:1,uv:{o:1,ty:86},uvB:{o:1,ty:-78}}},
+ {z:['貼 TOP 覆蓋膜（L3）＋熱壓','TOP coverlay on L3 + hot press'],d:['在 L3 上貼覆蓋膜（PI 12.5 µm + 膠 15 µm）並熱壓。之後硬板會疊在它上面；軟板區開蓋後，這層就是軟板上表面的保護層。','Coverlay (PI 12.5 µm + adhesive 15 µm) is laid on L3 and hot-pressed. The rigid layers will sit on top of it; after cover opening it protects the top of the flex.'],s:{cvT:{o:1,ty:0}},t:press(162,202)},
+ {z:['黏接層＋單面板（L5）壓合 → 3L 軟板','Adhesive + single-sided (L5) → 3L flex'],d:['L4 下方放<b>黏接層</b>（25 µm）與<b>單面板</b>（PI 12.5 µm + L5 銅 9 µm，銅朝外），壓成 <b>3L 軟板</b>。L5 是最外層，先保留整片銅。','An <b>adhesive</b> sheet (25 µm) and a <b>single-sided</b> laminate (PI 12.5 µm + 9 µm L5 copper facing out) go under L4 and are pressed into a <b>3L flex</b>. L5 is an outer layer, so it stays solid copper for now.'],s:on('adh5 pi5 c5 rl5',{o:1,ty:0}),t:press(162,224)},
+ {z:['貼上方 EMI 屏蔽膜（吃進硬板區）＋熱壓','Top EMI film (tucked under the rigid area) + hot press'],d:['趁 L3 上方還沒增層，先在軟板區貼 <b>EMI 屏蔽膜</b>（17 µm），並<b>吃進硬板區約 0.5–1 mm</b>，透過覆蓋膜開窗接到 L3 的地。之後 prepreg ① 會壓住它的邊緣，交界處沒有屏蔽缺口、彎折時也不易從交界翹起。EMI 要選耐兩次壓合（約 180 °C）的材料，吃進去的部分要離孔夠遠。','Before the build-up covers L3, <b>EMI shielding film</b> (17 µm) is laid over the flex area, <b>reaching ≈0.5–1 mm into the rigid area</b> and grounded to L3 through coverlay openings. Prepreg ① will clamp its edge, so there is no shielding gap at the transition and the edge resists peeling when flexed. The film must survive two laminations (~180 °C), and the tucked-in part must stay clear of holes.'],s:on('emT'),t:press(158,224)},
+ {z:['第一次增層：prepreg ①＋銅箔 → L2','Build-up 1: prepreg ① + foil → L2'],d:['在覆蓋膜上方疊 <b>prepreg ①</b>（no-flow，在軟板區開窗）與銅箔並壓合，銅箔就是 <b>L2</b>（疊構表中 L2 下方的 Adhesive 25 µm 就是這層）。只在上方加層，所以是<b>非對稱</b>疊構。','<b>Prepreg ①</b> (no-flow, windowed over the flex area) and copper foil are laminated on top of the coverlay; the foil becomes <b>L2</b> (the 25 µm “Adhesive” under L2 in the stack-up). Layers are added on one side only, so the stack is <b>asymmetric</b>.'],s:on('pp1L c2 rl2',{o:1,ty:0}),t:press(146,224)},
+ {z:['L2 成像蝕刻（Tenting）','L2 imaging + etch (tenting)'],d:['L2 下一次壓合後就會被埋在裡面，所以現在先做線路；軟板區上方的 L2 銅全部蝕除。L5 用整面乾膜保護，先不蝕刻。','L2 will be buried by the next lamination, so it is patterned now; all L2 copper over the flex area is etched away. L5 is fully protected by dry film and left unetched.'],s:on('g2a g2f'),t:{fT2:1,fB5:1,uv:{o:1,ty:60}}},
+ {z:['第二次增層：FR4 710 µm＋銅箔 → L1','Build-up 2: FR4 710 µm + foil → L1'],d:['再疊 <b>FR4（prepreg ②）710 µm</b> 與銅箔並壓合，形成 <b>L1</b>，完成 2+3 疊構。兩次壓合都只壓在上方，FR4 與 PI 的熱膨脹係數不同，這一步最容易<b>翹曲</b>，需要用壓合治具與對位補償（漲縮）來控制。','<b>FR4 (prepreg ②) 710 µm</b> and copper foil are laminated to form <b>L1</b>, completing the 2+3 stack. Both laminations are one-sided and FR4/PI expand differently with heat, so this step is the most prone to <b>warpage</b>; pressing fixtures and scaling compensation keep it in check.'],s:on('fr4L fr4R frT c1 rl1 zR zF',{o:1,ty:0}),t:press(88,224)},
+ {z:['雷射盲孔 L5→L4（疊孔）','Laser blind via L5→L4 (stacked)'],d:['UV 雷射從 L5 面打穿銅、PI 與黏接層，停在 L4 上，而且正好對準下面已填平的 L3–L4 孔，形成 <b>L3→L4→L5 疊孔</b>，這就是 HDI。','A UV laser drills from the L5 side through copper, PI and adhesive, stopping on L4 directly over the filled L3–L4 via: an <b>L3→L4→L5 stacked via</b>, the HDI showcase.'],s:on('h45'),t:{lasB:1}},
+ {z:['機械鑽孔：L1–L5 通孔＋L1→L2 控深孔','Mechanical drilling: L1–L5 through + L1→L2 depth-controlled'],d:['FR4 有 710 µm 厚，雷射打不穿，所以 L1→L2 改用<b>機械鑽</b>。L2 已經埋在板內，所以要用<b>控深鑽</b>（控制 Z 軸深度，鑽到 L2 銅墊就停）。另外再用 NC 機械鑽出貫穿全部 5 層的 <b>L1–L5 通孔</b>。','The 710 µm FR4 is too thick for a laser, so L1→L2 is <b>mechanically drilled</b>. Because L2 is already buried, a <b>depth-controlled drill</b> stops on the L2 pad. An NC drill also makes the <b>L1–L5 through-hole</b> across all 5 layers.'],s:on('holeB holeT'),t:{drillT:{o:1,ty:152},drillB:{o:1,ty:62}}},
+ {z:['電漿除膠＋第二次電鍍（15–20 µm）','Plasma + 2nd plating (15–20 µm)'],d:['電漿清孔 → 直接金屬化 → <b>第二次電鍍</b>：L5→L4 雷射孔<b>填孔</b>，L1–L5 通孔與 L1→L2 控深孔孔壁鍍銅，L1、L5 面銅各加 15–20 µm（疊構表中的 PTH Copper 15~20）。','Plasma clean → direct metallization → <b>2nd plating</b>: the L5→L4 laser via is <b>filled</b>, the L1–L5 through-hole and L1→L2 depth-drilled hole are plated, and 15–20 µm is added to L1 and L5 (PTH Copper 15~20).'],s:on('q1 q1x q5 q5x f45 wB1 wB2 wT1 wT2')},
+ {z:['減銅（L1／L5）','Copper reduction (L1/L5)'],d:['兩次電鍍與填孔讓外層面銅變得很厚。先用水平線（硫酸／雙氧水）均勻微蝕削薄，減少接下來蝕刻時的側蝕。','Two platings plus via fill leave thick outer copper. A horizontal line (sulfuric acid / peroxide) evenly thins it to reduce undercut in the next etch.'],s:on('q1x q5x',{o:0})},
+ {z:['外層 L1／L5 成像蝕刻（Tenting）','Outer layers L1/L5: imaging + etch (tenting)'],d:['<b>Tenting 蓋孔法</b>：兩面貼乾膜、LDI 成像，乾膜蓋住孔口與線路，再顯影、酸性蝕刻、去膜。軟板區上方的 L1 銅會一起蝕除；L5 同時是軟板區的線路層。','<b>Tenting</b>: dry film on both sides, LDI imaging; film tents over holes and traces, then develop, acid etch, strip. L1 copper over the flex area is removed; L5 also carries the flex-area traces.'],s:{...on(OC),...on('c1 q1 c5 q5',{o:0})},t:{fT1:1,fB5:1,uv:{o:1,ty:0},uvB:{o:1,ty:-52}}},
+ {z:['L1 防焊＋化鎳金','L1 solder mask + ENIG'],d:['硬板 L1 面印防焊，焊墊做<b>化鎳金</b>（Ni 3–6 µm + Au 0.05 µm）。','Solder mask on the rigid L1 side; pads get <b>ENIG</b> (Ni 3–6 µm + Au 0.05 µm).'],s:on(ids('mk',MKX.length)+' '+ids('au',AUX.length))},
+ {z:['貼 BOT 覆蓋膜（L5）＋熱壓','BOT coverlay on L5 + hot press'],d:['L5 是整片板子的底面（硬板區也是），所以貼覆蓋膜（膠 25 µm + PI 12.5 µm）保護，熱壓固化。','L5 is the bottom face of the whole board (rigid area included), so it is protected with coverlay (adhesive 25 µm + PI 12.5 µm) and hot-pressed.'],s:{cvB:{o:1,ty:0}}},
+ {z:['開蓋（只在上方）','Cover opening (top side only)'],d:['雷射沿硬板區邊界控深切開，掀掉軟板區上方的 FR4。因為 prepreg ① 在軟板區開窗、L2 銅也已經蝕除，蓋子不會黏住，可以整塊拿掉；雷射停在開窗的空隙裡，不會切到下面的 EMI。非對稱疊構只需要<b>單面開蓋</b>。','A laser makes a depth-controlled cut along the rigid edge and the FR4 over the flex area is lifted off; prepreg ① is windowed and L2 copper is gone there, so the cap comes away cleanly; the laser stops in the window gap, clear of the EMI film below. An asymmetric stack needs <b>one-sided</b> cover opening only.'],s:{fr4R:{o:0,ty:-70}},t:{lasM:1}},
+ {z:['貼下方 EMI 屏蔽膜','Bottom EMI shielding film'],d:['板子底面貼 <b>EMI 屏蔽膜</b>（17 µm），透過 BOT 覆蓋膜開窗接到 L5 的地，降低輻射與干擾。上方 EMI 已在增層前貼好。','<b>EMI shielding film</b> (17 µm) goes on the bottom face, grounded to L5 through BOT coverlay openings to cut emissions and noise. The top EMI was already applied before the build-up.'],s:on('emB')},
+ {z:['貼補強板（導電膠＋SUS）','Stiffener (conductive tape + SUS)'],d:['在連接器／元件下方用<b>導電膠</b>（60 µm）貼 <b>SUS 不鏽鋼補強板</b>（300 µm），同時接地、加強支撐。','A <b>SUS stainless stiffener</b> (300 µm) is bonded with <b>conductive tape</b> (60 µm) under the connector/components, grounding it and adding support.'],s:on('tape sus',{o:1,ty:0})},
+ {z:['外形切割＋電測＋翹曲／外觀檢查','Outline + e-test + warpage / visual check'],d:['雷射切出外形，邊料脫離；電測確認導通；非對稱板要特別量<b>翹曲度</b>，最後依 IPC 外觀檢查。完成！（2+3 非對稱軟硬結合板）','A laser cuts the outline and the scrap falls away; e-test confirms connectivity; an asymmetric board gets an extra <b>warpage</b> check, then IPC visual inspection. Done! (2+3 asymmetric rigid-flex)'],s:{...on('okTxt'),scrapL:{o:0,ty:30},scrapR:{o:0,ty:30}}}
+];
+// 示範疊構表（單位 µm）
+const STK=[['EMI','EMI 屏蔽膜（上，軟板區；增層前貼上，吃進硬板區約 0.5–1 mm）','17',EMI],['Plating Au','化金','0.05','#facc15'],['Plating Ni','化鎳','3~6','#e5e7eb'],['PTH Copper','第二次電鍍','15~20',P2],
+ ['Top Copper (L1)','銅 L1','18',CU],['FR4','FR4（prepreg ②，第二次增層）','710',FR4],['Bottom Copper (L2)','銅 L2','18',CU],['Adhesive','黏合層（prepreg ①，第一次增層）','25',PRE],
+ ['TOP Coverlay – PI','上覆蓋膜 PI','12.5',COV],['TOP Coverlay – Adhesive','上覆蓋膜 膠','15',COV],['PTH Copper','第一次電鍍','13',P1],['Top Copper (L3)','銅 L3','9',CU],['Base film','PI 基材','25',PI],
+ ['Bottom Copper (L4)','銅 L4','9',CU],['PTH Copper','第一次電鍍','13',P1],['Adhesive','黏接層','25',ADH],['Base film','PI 基材（單面板）','12.5',PI],['Bottom Copper (L5)','銅 L5','9',CU],
+ ['PTH Copper','第二次電鍍','15~20',P2],['BOT Coverlay – Adhesive','下覆蓋膜 膠','25',COV],['BOT Coverlay – PI','下覆蓋膜 PI','12.5',COV],['EMI','EMI 屏蔽膜（下）','17',EMI],
+ ['Stiffener – Conductive tape','補強板 導電膠','60','#64748b'],['Stiffener – SUS','補強板 不鏽鋼','300',SUS]];
+const asymStack=`<h3>${B('疊構表（2+3 非對稱）','Stack-up (2+3 asymmetric)')}</h3><table><tr><th>${B('結構','Structure')}</th><th>${B('說明','Note')}</th><th>µm</th></tr>`+
+ STK.map(r=>`<tr><td><i class="sw" style="background:${r[3]}"></i>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')+
+ `</table><p><small>${B('估算總厚（不含補強板）：硬板區約 1.0 mm，軟板區約 0.23 mm。動畫中的厚度不是真實比例。','Estimated thickness (without stiffener): rigid area ≈1.0 mm, flex area ≈0.23 mm. Thicknesses in the animation are not to scale.')}</small></p>`;
+const MODES={
+ flex:{n:['軟板 Flex（3L）','Flex PCB (3L)'],steps:flexSteps,scene:flexScene,def:flexDEF,
+  tag:['層數：<b>3L</b> ＝ <b>2L 雙面板</b> + <b>1L 單面板</b>，中間以<b>黏接層</b>壓合。孔：L1–L2、L2–L3 為 <b>UV 雷射填孔微盲孔</b>，L1–L3 為機械通孔。','Layers: <b>3L</b> = <b>2L double-sided</b> + <b>1L single-sided</b>, bonded with an <b>adhesive</b> layer. Holes: L1–L2 and L2–L3 are <b>UV-laser filled microvias</b>; L1–L3 is a mechanical through-hole.']},
+ rigid:{n:['軟硬結合板 Rigid-Flex（1+4+1）','Rigid-Flex PCB (1+4+1)'],steps:rigidSteps,scene:rigidScene,def:rigidDEF,
+  tag:['層數：<b>1+4+1</b> ＝ 上硬板 1 層 + <b>4 層軟板</b>（兩片雙面板以黏接層壓合）+ 下硬板 1 層，共 <b>6 層銅</b>；硬軟之間以 <b>prepreg</b> 黏合。孔：L1–L2、L6–L5（HDI 雷射盲孔）、L2–L3、L5–L4（雷射埋孔），以上都填孔；L2–L5、L1–L6 為機械通孔。','Layers: <b>1+4+1</b> = 1 rigid layer + <b>4-layer flex</b> (two double-sided cores bonded by adhesive) + 1 rigid layer = <b>6 copper layers</b>; rigid and flex joined by <b>prepreg</b>. Holes: L1–L2, L6–L5 (HDI laser blind vias) and L2–L3, L5–L4 (laser buried vias), all copper-filled; L2–L5 and L1–L6 are mechanical through-holes.']},
+ asym:{n:['軟硬結合板 Rigid-Flex（2+3 非對稱）','Rigid-Flex PCB (2+3 asymmetric)'],steps:asymSteps,scene:asymScene,def:asymDEF,stack:asymStack,
+  tag:['層數：<b>2+3 非對稱</b> ＝ <b>3L 軟板</b>（L3–L5）上方<b>循序增層</b>兩次（prepreg ① → L2，FR4 710 µm → L1），共 <b>5 層銅</b>，只有上方有硬板。孔：<b>L3→L4→L5 雷射疊孔</b>（L3–L4 第一次電鍍填孔、L5→L4 第二次電鍍填孔）；L1→L2 機械控深孔；L1–L5 機械通孔。蝕刻全部用 Tenting。','Layers: <b>2+3 asymmetric</b> = a <b>3L flex</b> (L3–L5) with two <b>sequential build-ups</b> on top only (prepreg ① → L2, FR4 710 µm → L1) = <b>5 copper layers</b>, rigid on one side. Holes: <b>L3→L4→L5 stacked laser vias</b> (L3–L4 filled in the 1st plating, L5→L4 in the 2nd); L1→L2 depth-controlled mechanical hole; L1–L5 mechanical through-hole. All etching is tenting.']}
+};
+let mode='flex',idx=0,playing=false,timer=null,speed=1,IDS=[];
+const svg=document.getElementById('stage');
+function loadScene(){
+  svg.innerHTML=MODES[mode].scene.join('');
+  IDS=[...svg.querySelectorAll('[id]')].map(e=>e.id);
+  // 層數一行摘要，孔的說明點開才看
+  const [tz,te]=MODES[mode].tag,[z1,z2]=tz.split('。孔：'),[e1,e2]=te.split('. Holes:');
+  document.getElementById('layers').innerHTML=`<details><summary>${B(z1+'。',e1+'.')}</summary><p>${B('孔：'+z2,'Holes:'+e2)}</p></details>`;
+  const sk=document.getElementById('stack');sk.innerHTML=MODES[mode].stack||'';sk.style.display=MODES[mode].stack?'':'none';
+}
+function stateAt(i){
+  const st={};IDS.forEach(id=>st[id]={o:0,ty:0,tx:0,...(MODES[mode].def[id]||{})});
+  const m=(id,v)=>{if(st[id])Object.assign(st[id],typeof v==='object'?v:{o:v})};
+  const S=MODES[mode].steps;
+  for(let k=0;k<=i;k++)for(const[id,v]of Object.entries(S[k].s||{}))m(id,v);
+  for(const[id,v]of Object.entries(S[i].t||{}))m(id,v);
+  return st;
+}
+function draw(){
+  const st=stateAt(idx);
+  IDS.forEach(id=>{const e=document.getElementById(id),s=st[id];e.style.opacity=s.o;e.style.transform=`translate(${s.tx}px,${s.ty}px)`});
+  const S=MODES[mode].steps,c=S[idx];
+  document.getElementById('cap').innerHTML=`<h3>${idx+1}/${S.length}　${B(c.z[0],c.z[1])}</h3><p>${B(c.d[0],c.d[1])}</p>`;
+  document.querySelector('#bar i').style.width=((idx+1)/S.length*100)+'%';
+  document.querySelectorAll('#steps .chip').forEach((x,k)=>x.classList.toggle('cur',k===idx));
+  document.getElementById('pp').innerHTML=playing?'⏸ '+B('暫停','Pause'):'▶ '+B('播放','Play');
+  history.replaceState(null,'',`?mode=${mode}&step=${idx+1}`);
+}
+function buildUI(){
+  document.getElementById('steps').innerHTML=MODES[mode].steps.map((s,k)=>`<button class="chip" data-k="${k}">${k+1}. ${B(s.z[0],s.z[1])}</button>`).join('');
+  document.querySelectorAll('#steps .chip').forEach(c=>c.onclick=()=>{idx=+c.dataset.k;draw()});
+  document.querySelectorAll('#mode button').forEach(b=>b.classList.toggle('on',b.dataset.m===mode));
+}
+function tick(){clearTimeout(timer);if(!playing)return;timer=setTimeout(()=>{const n=MODES[mode].steps.length;if(idx<n-1){idx++;draw();tick()}else{playing=false;draw()}},3800/speed)}
+function toggle(){if(!playing&&idx>=MODES[mode].steps.length-1)idx=0;playing=!playing;draw();tick()}
+document.getElementById('mode').innerHTML=Object.entries(MODES).map(([k,v])=>`<button class="btn sec" data-m="${k}">${B(v.n[0],v.n[1])}</button>`).join('');
+document.querySelectorAll('#mode button').forEach(b=>b.onclick=()=>{mode=b.dataset.m;idx=0;playing=false;clearTimeout(timer);loadScene();buildUI();draw()});
+document.getElementById('ctrl').innerHTML=`<button class="btn" id="pp"></button><button class="btn sec" id="pv">⏮ ${B('上一步','Prev')}</button><button class="btn sec" id="nx">⏭ ${B('下一步','Next')}</button><button class="btn sec" id="rs">↺ ${B('重來','Restart')}</button><label class="spd">${B('速度','Speed')} <select id="sp"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>`;
+const $=id=>document.getElementById(id);
+$('pp').onclick=toggle;
+$('pv').onclick=()=>{idx=Math.max(0,idx-1);draw()};
+$('nx').onclick=()=>{idx=Math.min(MODES[mode].steps.length-1,idx+1);draw()};
+$('rs').onclick=()=>{idx=0;playing=false;clearTimeout(timer);draw()};
+$('sp').onchange=()=>{speed=+$('sp').value;tick()};
+document.getElementById('lgh').innerHTML=B('圖例（剖面圖）','Legend (cross-section)');
+document.getElementById('lg').innerHTML=[[PI,'PI 基材','PI core'],[CU,'銅（L1…）','Copper (L1…)'],[ADH,'黏接層 adhesive','Adhesive (bondply)'],['#3b82f6','感光乾膜','Dry film'],[COV,'覆蓋膜','Coverlay'],['#facc15','金','Gold'],['#78350f','補強板','Stiffener'],[FR4,'硬板 FR4','Rigid FR4'],[PRE,'prepreg 黏合片','Prepreg'],['#16a34a','防焊','Solder mask'],['#fff','絲印','Silkscreen'],['#a3e635','軟膠','Flexible compound'],['#f43f5e','雷射（鑽孔／切割）','Laser (drilling / cutting)'],[P1,'第一次電鍍（2+3）','1st plating (2+3)'],[P2,'第二次電鍍（2+3）','2nd plating (2+3)'],[EMI,'EMI 屏蔽膜','EMI film'],[SUS,'SUS 補強板','SUS stiffener'],['#94a3b8','壓合機熱壓板（壓合時才出現）','Press platens (shown during lamination)'],['#475569','板邊廢料（最後切除）','Panel-edge scrap (cut off at the end)']].map(x=>`<span><i class="sw" style="background:${x[0]}"></i>${B(x[1],x[2])}</span>`).join('');
+// ?mode=flex|rigid|asym&step=N（N 從 1 起算）
+const q=new URLSearchParams(location.search);if(q.get('mode')&&MODES[q.get('mode')])mode=q.get('mode');idx=Math.max(0,Math.min((+q.get('step')||1)-1,MODES[mode].steps.length-1));
+loadScene();buildUI();draw();initLang();
+</script></body></html>
+
