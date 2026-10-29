@@ -4,3 +4,5 @@
 # Vercel 本機連結與環境變數
 .vercel
 .env*
+# 第三方圖卡與貼文原文，只供參考，不公開
+mSAP_SAP_RDL/

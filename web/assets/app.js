@@ -11,7 +11,7 @@ function setMode(m){
   document.querySelectorAll('.langsw button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
 }
 // 全站導覽列：插在頁首上方，標出目前頁面
-const PAGES=[['index.html','首頁','Home'],['flex.html','軟板','Flex'],['rigid-flex.html','軟硬結合板','Rigid-Flex'],['animation.html','製程動畫','Animation'],['plating.html','蓋孔 vs 圖形電鍍','Tenting vs Pattern']];
+const PAGES=[['index.html','首頁','Home'],['flex.html','軟板','Flex'],['rigid-flex.html','軟硬結合板','Rigid-Flex'],['animation.html','製程動畫','Animation'],['plating.html','蓋孔 vs 圖形電鍍','Tenting vs Pattern'],['fine-line.html','mSAP／SAP／RDL','mSAP / SAP / RDL']];
 function initNav(){
   const cur=location.pathname.split('/').pop()||'index.html';
   const n=document.createElement('nav');n.className='sitenav';

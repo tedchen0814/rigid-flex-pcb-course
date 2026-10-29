@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>mSAP vs SAP vs aSAP（RDL）| 一層線路怎麼做</title><link rel="stylesheet" href="assets/style.css">
+<style>
+.axis{display:flex;flex-wrap:wrap;gap:8px}
+.axis .node{flex:1 1 160px;background:#0b1220;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:.85rem;color:var(--text);text-decoration:none;text-align:left;font-family:inherit;cursor:pointer;line-height:1.5}
+.axis a.node{border-style:dashed}.axis .node b{display:block;font-size:.95rem}.axis .node .mut{display:block;color:var(--mut)}
+.axis .node.cur{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.side3 h3{margin:0 0 6px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.side3 h3 small{color:var(--mut);font-weight:400;font-size:.8rem}
+.side3 svg{background:#0b1220;border:1px solid var(--line);border-radius:12px;width:100%;display:block}
+.side3.hl svg{border-color:var(--warn)}
+.side3 .cap{margin-top:8px;min-height:11em}
+.side3 .cap h4{margin:0 0 4px}
+.side3 .diff{margin-top:8px;font-size:.9rem;color:var(--mut)}
+.side3.hl .diff{border-left:4px solid var(--warn);background:#422006;color:var(--text);padding:6px 10px;border-radius:6px}
+.side3 details{margin-top:8px;font-size:.88rem;color:var(--mut)}.side3 summary{cursor:pointer;color:var(--acc)}
+svg .fl-zh{font-size:7px;font-weight:700}svg .fl-en{font-size:5.2px}svg .fl-lab{font-size:14px}
+.m-zh svg .fl-en{display:none}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+.ctrl select{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px}
+.ctrl .btn{white-space:nowrap}
+.m-both .ctrl .en{display:inline;margin-left:4px}
+#bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin:8px 0}
+#bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .4s}
+.chip.cur{background:var(--acc);color:#0f172a;font-weight:700}
+.chip.hl:not(.cur){border-color:var(--warn)}
+.seed .row{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap;margin-top:10px}
+.seed output{font-weight:700;color:var(--acc);font-size:1.1rem}
+.seed input[type=range]{width:100%;accent-color:var(--acc)}
+.seed svg{background:#0b1220;border:1px solid var(--line);border-radius:12px;width:100%;display:block;margin:10px 0}
+.res{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.res div{background:#0b1220;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.85rem;color:var(--mut)}
+.res b{display:block;font-size:1.15rem;color:var(--text)}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.note{font-size:.85rem;color:var(--mut)}
+.src li{margin:4px 0}.src a{color:var(--acc)}
+@media (max-width:860px){.trio{grid-template-columns:1fr}.side3 .cap{min-height:0}.res{grid-template-columns:1fr 1fr}.m-both .ctrl .btn .en{display:none}}
+</style></head>
+<body class="wide">
+<header><h1><span class="zh">一層線路怎麼做：mSAP vs SAP vs aSAP（RDL）</span><span class="en">Building one layer: mSAP vs SAP vs aSAP (RDL)</span></h1>
+<p><span class="zh">三種細線路工法並排同步播放：步驟名稱一樣，差在電鍍前那層「底」怎麼來　</span><span class="en">Three fine-line methods played side by side: same step names, different ways to make the plating seed　</span><a href="plating.html">← Tenting vs Pattern Plating</a></p></header>
+<main>
+<div class="card"><h3 id="axh"></h3><div class="axis" id="axis"></div><p class="note" id="axn"></p></div>
+<div class="trio" id="trio"></div>
+<div id="bar"><i></i></div>
+<div class="ctrl" id="ctrl"></div>
+<div class="card"><div class="chips" id="steps"></div></div>
+<div class="card seed" id="seed"></div>
+<div class="card" id="cmp"></div>
+<div class="card"><h3 id="qh"></h3><div id="qz"></div></div>
+<div class="card src" id="src"></div>
+</main>
+<footer><span class="zh">內容整理自社群圖文與 Fraunhofer IZM、MacDermid 等文獻，剖面依原圖文架構重畫</span><span class="en">Compiled from a community post and sources such as Fraunhofer IZM and MacDermid; cross-sections redrawn</span></footer>
+<script src="assets/app.js"></script>
+<script src="assets/fineline.js"></script>
+<script>
+initLang();
+const $=id=>document.getElementById(id);
+const PAL={cu:'#d9822b',cu2:'#f2b56e',die:'#3b4658',dieOld:'#2a3242',dot:'#8d99ab',smear:'#c2a36b',resist:'#3b82f6',ti:'#b8b8b8',dash:'#e2e8f0',ink:'#e2e8f0',mut:'#94a3b8',onCu:'#ffffff',bad:'#ef4444'};
+const M=FL.METHODS;let step=0,timer=null,speed=1;
+$('axh').innerHTML=B('底越薄，線越細','Thinner seed, finer lines');
+$('axis').innerHTML=FL.SPECTRUM.map(n=>{const inner='<b>'+B(n.name[0],n.name[1])+(n.link?' ↗':'')+'</b><span class="mut">'+B('底：'+n.seed[0],'Seed: '+n.seed[1])+'</span><span class="mut">'+B('線寬主場：'+n.ls[0],'L/S: '+n.ls[1])+'</span>';return n.link?'<a class="node" href="'+n.link+'">'+inner+'</a>':'<div class="node cur">'+inner+'</div>';}).join('');
+$('axn').innerHTML=B('底越薄 → 去底時蝕得越少 → 線兩側被啃得越少 → 線可以越細。前兩格是上一頁的外層線路工法；本頁的三種做法都以「圖形電鍍」長線，差別在電鍍前的底。','Thinner seed → less seed etching → less line loss → finer lines. The first two are the previous page’s outer-layer methods; all three methods here build lines by pattern plating and differ only in the seed beneath.');
+$('trio').innerHTML=FL.ORDER.map(k=>'<div class="side3" id="s-'+k+'"><h3>'+M[k].name+'<small>'+B(M[k].zh,M[k].en)+'</small></h3><svg viewBox="0 0 300 180"></svg><div class="cap card"></div></div>').join('');
+function draw(){
+ FL.ORDER.forEach(k=>{const el=$('s-'+k),T=FL.TEXT[k][step],hl=M[k].hl.includes(step);el.classList.toggle('hl',hl);el.querySelector('svg').innerHTML=FL.draw(k,step,PAL,true);
+  el.querySelector('.cap').innerHTML='<h4>'+B((step+1)+' '+FL.STEPS[step][0],(step+1)+' '+FL.STEPS[step][1])+'</h4>'+B(T[0],T[1])+'<div class="diff">'+(hl?'★ ':'')+B(T[2],T[3])+'</div><details><summary>'+B('工程細節','Engineering details')+'</summary>'+B(T[4],T[5])+'<p>'+B(T[6],T[7])+'</p></details>';});
+ $('steps').innerHTML=FL.STEPS.map((s,i)=>'<button class="chip'+(i===step?' cur':'')+(FL.ORDER.some(k=>M[k].hl.includes(i))?' hl':'')+'" data-s="'+i+'">'+B((i+1)+' '+s[0],(i+1)+' '+s[1])+'</button>').join('');
+ $('steps').querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{stop();step=+b.dataset.s;draw();});
+ $('bar').firstElementChild.style.width=((step+1)/6*100)+'%';
+ $('prev').disabled=step===0;$('next').disabled=step===5;
+}
+function stop(){clearInterval(timer);timer=null;$('play').innerHTML='▶ '+B('播放','Play');}
+$('ctrl').innerHTML='<button class="btn sec" id="prev">← '+B('上一步','Prev')+'</button><button class="btn" id="play"></button><button class="btn sec" id="next">'+B('下一步','Next')+' →</button><button class="btn sec" id="rs">↺ '+B('重播','Restart')+'</button><label>'+B('速度','Speed')+' <select id="spd"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>';
+$('prev').onclick=()=>{stop();if(step>0)step--;draw();};$('next').onclick=()=>{stop();if(step<5)step++;draw();};$('rs').onclick=()=>{stop();step=0;draw();};
+$('spd').onchange=e=>{speed=+e.target.value;if(timer){stop();$('play').click();}};
+$('play').onclick=()=>{if(timer){stop();return;}if(step===5)step=0;draw();$('play').innerHTML='Ⅱ '+B('暫停','Pause');timer=setInterval(()=>{if(step<5){step++;draw();}if(step===5)stop();},6000/speed);};
+stop();
+// 去底滑桿
+const seedFromV=v=>0.05*Math.pow(120,v/100),vFromSeed=s=>Math.round(100*Math.log(s/0.05)/Math.log(120)),fmtSeed=s=>s<1?Math.round(s*1000)+' nm':(+s.toFixed(2))+' µm';
+const st={m:'msap',s:4,w:20};
+$('seed').innerHTML='<h3>'+B('去底會啃掉多少線？','How much line does seed removal eat?')+'</h3><p class="note">'+B('選一種工法帶入底厚，或自己拖動；再設定光阻開口（設計線寬）。','Pick a method to load its seed thickness or drag your own, then set the resist opening (design width).')+'</p><div class="chips">'+FL.ORDER.map(k=>'<button class="chip" data-sp="'+k+'">'+M[k].name+' · '+fmtSeed(M[k].seed)+'</button>').join('')+'</div><div class="row"><span>'+B('底厚','Seed thickness')+'</span><output id="so"></output></div><input id="sr" type="range" min="0" max="100" step="1"><div class="row"><span>'+B('設計線寬（光阻開口）','Design width (resist opening)')+'</span><output id="wo"></output></div><input id="wr" type="range" min="2" max="40" step="0.5"><svg id="tr" viewBox="0 0 640 260"></svg><div class="res"><div>'+B('去底後線寬','Final width')+'<b id="fw"></b></div><div>'+B('被蝕掉的比例','Width lost')+'<b id="ls"></b></div><div>'+B('判讀','Reading')+'<b id="vd"></b></div></div><p class="note">'+B('簡化模型：把去底當成等向蝕刻，線的頂面與兩側各被蝕掉約一個底厚（鍍銅高度設為 15 µm）。實際的差異蝕刻會調整藥水，讓底蝕得比電鍍銅快，被啃的量通常較少；板廠也會預先把線加寬補償。','Simplified model: seed removal is treated as isotropic, so the top and each side lose about one seed thickness (plated height 15 µm). Real differential etches attack the seed faster, so loss is usually smaller, and fabs pre-bias lines.')+'</p>';
+function seed(sync){if(sync){$('sr').value=vFromSeed(st.s);$('wr').value=st.w;}const r=FL.trace(st.w,st.s,15,PAL);$('tr').innerHTML=r.svg;$('so').textContent=fmtSeed(st.s);$('wo').textContent=st.w+' µm';$('fw').textContent=r.fw>0?(+r.fw.toFixed(2))+' µm':'0';$('ls').textContent=Math.round(r.loss*100)+'%';
+ const v=r.fw<=0?['線被蝕斷','Line etched through','bad']:r.loss>0.4?['損失過大','Excessive loss','bad']:r.loss>0.15?['需加寬補償','Needs pre-bias','warn']:['線寬穩定','Stable width','ok'];$('vd').innerHTML='<span class="'+v[2]+'">'+B(v[0],v[1])+'</span>';
+ $('seed').querySelectorAll('[data-sp]').forEach(b=>b.classList.toggle('cur',st.m===b.dataset.sp));}
+$('seed').querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{st.m=b.dataset.sp;st.s=M[st.m].seed;seed(true);});
+$('sr').oninput=e=>{st.s=seedFromV(+e.target.value);st.m=null;seed(false);};$('wr').oninput=e=>{st.w=+e.target.value;seed(false);};
+seed(true);
+// 比較表
+const rows=[['絕緣層','Dielectric',['絕緣層＋超薄銅箔','Dielectric + ultra-thin foil'],['ABF 膜','ABF film'],['ABF 膜或感光型絕緣層','ABF film or PID']],['清孔','Via cleaning',['濕式除膠渣','Wet desmear'],['濕式，並把表面咬粗','Wet, with surface roughening'],['電漿乾式，削平孔壁','Dry plasma, smooths the wall']],['打底','Seeding',['銅箔＋化學銅 2.5–5 µm','Foil + electroless 2.5–5 µm'],['化學銅 1–2 µm','Electroless 1–2 µm'],['濺鍍鈦＋銅 50–500 nm','Sputtered Ti + Cu 50–500 nm']],['附著靠什麼','Adhesion',['銅箔與絕緣層一起壓合','Foil laminated with dielectric'],['咬粗表面的機械咬合','Mechanical anchoring in roughness'],['鈦黏著層，表面可平滑','Ti adhesion layer on a smooth surface']],['去底','Seed removal',['蝕最多，線被啃最多','Most etching, most line loss'],['蝕 1–2 µm','1–2 µm etched'],['只蝕零點幾微米','Only a few tenths of a micron']],['線寬主場','L/S sweet spot',['> 20 µm','> 20 µm'],['20–10 µm','20–10 µm'],['< 10 µm','< 10 µm']],['常見用途','Typical use',['手機主機板、光模組板','Phone mainboards, optical modules'],['ABF 載板','ABF substrates'],['先進封裝 RDL','Advanced-packaging RDL']]];
+$('cmp').innerHTML='<h3>'+B('三種做法比較','Comparison')+'</h3><div style="overflow-x:auto"><table><thead><tr><th>'+B('項目','Item')+'</th>'+FL.ORDER.map(k=>'<th>'+M[k].name+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr><td>'+B(r[0],r[1])+'</td>'+[2,3,4].map(i=>'<td>'+B(r[i][0],r[i][1])+'</td>').join('')+'</tr>').join('')+'</tbody></table></div><p class="note">'+B('步驟 5「長線路」三種都相同：光阻做出溝槽、電鍍灌進去，也就是圖形電鍍。mSAP 用在 any-layer 手機板時，微孔填銅和長線在同一次圖形電鍍完成，不鍍錫，光阻剝掉後直接去底。','Step 5 is the same for all three: resist channels filled by plating, i.e. pattern plating. For any-layer phone boards, mSAP fills microvias and builds lines in one pattern plate, uses no tin resist, and removes the seed right after stripping the resist.')+'</p>';
+// 測驗
+$('qh').innerHTML=B('小測驗','Quiz');
+renderQuiz($('qz'),[
+ {q:B('三種做法中，哪一步幾乎一樣？','Which step is almost identical in all three?'),o:[B('第 5 步：光阻溝槽裡電鍍長線','Step 5: plating lines in resist channels'),B('第 3 步：清孔','Step 3: via cleaning'),B('第 4 步：打底','Step 4: seeding')],a:0,e:B('長線路都是圖形電鍍：光阻當模具、電鍍灌進去。差別全在之前那層底。','All use pattern plating; the difference is the seed beneath.')},
+ {q:B('去底時，哪種做法的線被啃得最少？','Which method loses the least line width in seed removal?'),o:[B('mSAP','mSAP'),B('SAP','SAP'),B('aSAP（RDL）','aSAP (RDL)')],a:2,e:B('aSAP 的濺鍍底只有 50–500 nm；mSAP 要蝕穿 2.5–5 µm 的銅箔加化學銅。','aSAP’s sputtered seed is 50–500 nm; mSAP must remove 2.5–5 µm.')},
+ {q:B('SAP 為什麼要在清孔時把表面咬粗？','Why does SAP roughen the surface?'),o:[B('讓化學銅靠凹凸抓住','So electroless copper can anchor'),B('讓雷射更好打孔','To help laser drilling'),B('讓光阻更容易剝','To ease resist stripping')],a:0,e:B('化學銅靠機械咬合附著；但線越細越不能容忍凹凸。','Electroless copper anchors mechanically, but fine lines cannot tolerate roughness.')},
+ {q:B('aSAP 為什麼改用電漿乾式清孔？','Why does aSAP use dry plasma cleaning?'),o:[B('濺鍍走直線，孔壁不平就鍍不連續','Sputtering travels in straight lines; rough walls break the seed'),B('電漿比較便宜','Plasma is cheaper'),B('為了把表面咬粗','To roughen the surface')],a:0,e:B('孔壁凸起會擋住濺鍍；先削平孔壁，鈦／銅底才連續。','Bumps shadow sputtering; a smooth wall gives a continuous Ti/Cu seed.')},
+ {q:B('上一頁的 Pattern Plating 和 mSAP 最大的差別是？','The main difference between the previous page’s pattern plating and mSAP?'),o:[B('底的厚度與去底方式','Seed thickness and how it is removed'),B('有沒有用光阻','Whether resist is used'),B('有沒有電鍍','Whether plating is used')],a:0,e:B('兩者都用光阻溝槽電鍍長線；傳統 Pattern Plating 底是一般銅箔＋一銅、靠鍍錫保護再鹼性蝕刻，mSAP 底只有幾微米、不鍍錫直接差異蝕刻。','Both plate in resist channels; conventional pattern plating uses regular foil + flash with a tin resist and alkaline etch, while mSAP’s seed is a few microns and is removed by a differential etch without tin.')}
+]);
+$('src').innerHTML='<h3>'+B('資料來源','Sources')+'</h3><p class="note">'+B('重點整理自社群圖文〈電路板系列番外｜一層線路怎麼做〉，剖面依其架構重畫、厚度不照比例。Fraunhofer IZM 與 MacDermid 已查證原文；ULVAC、JIEP、日月光為原貼文引述。線寬是各做法的主場，不是硬上限。','Summarized from a community post (“Building one layer”); cross-sections redrawn, not to scale. Fraunhofer IZM and MacDermid were checked against the originals; ULVAC, JIEP and ASE are as cited in the post. Line widths are sweet spots, not hard limits.')+'</p><ul>'+FL.SOURCES.map(x=>'<li><a href="'+x[1]+'" target="_blank" rel="noopener">'+x[0]+'</a></li>').join('')+'</ul>';
+draw();
+</script>
+</body></html>

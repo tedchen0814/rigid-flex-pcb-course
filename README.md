@@ -16,7 +16,8 @@
 | 軟板 | `web/flex.html` | 示範疊構 3L（2L 雙面板＋1L 單面板＋黏接層）、基礎製程、工廠實景、SMT 載板組裝；步驟卡片可直接跳到影片對應時間；含測驗與名詞表 |
 | 軟硬結合板 | `web/rigid-flex.html` | 示範疊構 1+4+1（含 prepreg）、軟硬板如何壓合、設計重點、開蓋製程；含製程排序小遊戲、測驗與名詞表 |
 | 製程動畫 | `web/animation.html` | 三種疊構的剖面製程動畫（見下表），可播放、逐步前後切換、調速、點步驟直接跳轉；網址帶 `?mode=flex\|rigid\|asym&step=N` 可分享到指定步驟 |
-| 蓋孔法 vs 圖形電鍍法 | `web/plating.html` | Tenting 與 Pattern Plating 並排同步動畫、線路側蝕放大鏡、破孔與夾膜兩種失敗情境開關、優缺點比較表、減銅說明與測驗 |
+| 蓋孔法 vs 圖形電鍍法 | `web/plating.html` | Tenting 與 Pattern Plating 並排同步動畫、線路側蝕放大鏡、破孔與夾膜兩種失敗情境開關、優缺點比較表、減銅說明與測驗；頁尾連到下一頁 |
+| mSAP／SAP／RDL | `web/fine-line.html` | 接續圖形電鍍，三種細線路工法做一層線路的 6 步並排同步播放（壓膜、開孔、清孔、打底、長線路、去底）；演進軸、「去底會啃掉多少線」滑桿、比較表、5 題測驗與資料來源 |
 
 ### 製程動畫的三種模式
 
@@ -46,8 +47,10 @@
     ├── rigid-flex.html
     ├── animation.html  # 三種製程動畫（場景、步驟資料都在檔內）
     ├── plating.html    # Tenting vs Pattern Plating
+    ├── fine-line.html  # mSAP／SAP／aSAP（RDL）
     └── assets/
         ├── app.js      # 共用：導覽列、語言切換、分頁、步驟卡、測驗、名詞表、排序遊戲
+        ├── fineline.js # 線路工法的內容資料與剖面繪圖（與 10 層 HDI 教學站共用）
         └── style.css   # 共用樣式（深色主題）
 ```
 
@@ -90,5 +93,6 @@ Vercel 已連結這個 GitHub repo，push 到 `main` 就會自動重新部署。
   - [Inside a Flexible PCB Factory – in China（Strange Parts）](https://youtu.be/xvByereqOVQ)
   - [How does rigid-flex PCBs are manufactured?](https://youtu.be/earOp9YcDpc)
 - Tenting 與 Pattern Plating 一頁整理自參考筆記，並經網路查證修正與補充；頁尾列有參考來源。
+- mSAP／SAP／RDL 一頁整理自社群圖文〈電路板系列番外｜一層線路怎麼做〉，剖面依其架構重畫、不使用原圖；種子層厚度與線寬依 Fraunhofer IZM（IMAPS 2024）與 MacDermid（PCD&F 2018）原文查證。同樣的內容與繪圖核心也用在另一個 10 層 HDI 教學站的第 05 章。
 - 3L、1+4+1、2+3 的層數、黏接層、prepreg 與疊構表都是**教學示範設定**，不是影片原文，也不是任何實際產品的疊構。
 - 剖面圖是簡化示意，層厚、線寬與位置都不是真實比例；製程能力數值以合作板廠的規格為準。
