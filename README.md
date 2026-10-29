@@ -4,7 +4,7 @@
 
 🔗 線上版：<https://rigid-flex-pcb-course.vercel.app/>
 
-從軟板（FPC）基礎講到軟硬結合板（Rigid-Flex），用剖面圖動畫一步一步看懂疊構、鑽孔、電鍍與蝕刻。整站是純靜態網頁，不需要建置。
+從軟板（FPC）基礎講到軟硬結合板（Rigid-Flex），再延伸到線路工法的演進（Tenting → Pattern Plating → mSAP／SAP／RDL），用剖面圖動畫一步一步看懂疊構、鑽孔、電鍍與蝕刻。整站是純靜態網頁，不需要建置。
 
 ---
 
